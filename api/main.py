@@ -1,6 +1,6 @@
 from typing import Any
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Response
 from pydantic import BaseModel
 
 class Entry(BaseModel):
@@ -16,5 +16,5 @@ class Entry(BaseModel):
 app = FastAPI()
 
 @app.post("/")
-async def echo_root(request: Entry) -> Entry:
-    return request
+async def echo_root(request: Entry) -> Response:
+    return Response(content=request.model_dump_json(), media_type="application/json")

@@ -33,7 +33,8 @@ pub const ScenarioData = struct {
         defer csv_file.close();
 
         const csv_config = csv.CsvConfig{ .col_sep = ',', .row_sep = '\n', .quotes = '"' };
-        var tokenizer = try csv.CsvTokenizer(csv_config).init(allocator, csv_file.reader(), 512);
+        // NOTE: Buffer size is large, since carryover is not yet implemented and some tokens may split or fuse together, resulting in weird bugs
+        var tokenizer = try csv.CsvTokenizer(csv_config).init(allocator, csv_file.reader(), 65536);
         defer tokenizer.deinit();
 
         var scenario: []u8 = undefined;
@@ -49,7 +50,7 @@ pub const ScenarioData = struct {
         while (try tokenizer.next()) |*token| {
             defer token.deinit();
 
-            const token_val = std.mem.trim(u8, token.value, " \t\r\n");
+            const token_val = token.value; //std.mem.trim(u8, token.value, " \t\r\n");
             switch (token.token_type) {
                 csv.TokenType.INT, csv.TokenType.FLOAT, csv.TokenType.STRING => {
                     if (next_stat) |next| {

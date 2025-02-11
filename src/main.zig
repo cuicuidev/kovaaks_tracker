@@ -27,6 +27,7 @@ pub fn main() !void {
 
     while (try iterator.next()) |dirContent| {
         const file_name = try allocator.alloc(u8, dirContent.name.len);
+        defer allocator.free(file_name);
         @memcpy(file_name, dirContent.name);
 
         const parts = [_][]const u8{ STATS_DIR, "\\", file_name };
@@ -37,6 +38,8 @@ pub fn main() !void {
         defer data.deinit();
         const payload = try data.jsonSerialize();
         defer allocator.free(payload);
-        try http.sendPayload(allocator, payload, "http://127.0.0.1:8000/"); //TODO: all memory leaked if the server returns err
+
+        //std.debug.print("Payload:\n{s}\n\n", .{payload});
+        try http.sendPayload(allocator, payload, "http://127.0.0.1:8000/");
     }
 }
