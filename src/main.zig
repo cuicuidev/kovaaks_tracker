@@ -37,6 +37,6 @@ pub fn main() !void {
         defer data.deinit();
         const payload = try data.jsonSerialize();
         defer allocator.free(payload);
-        try http.sendPayload(allocator, payload, "http://httpbin.org/anything");
+        try http.sendPayload(allocator, payload, "http://127.0.0.1:8000/"); //TODO: all memory leaked if the server returns err
     }
 }
