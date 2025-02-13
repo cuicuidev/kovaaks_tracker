@@ -25,3 +25,23 @@ pub fn sendPayload(allocator: mem.Allocator, payload: []const u8, endpoint: []co
 
     std.debug.print("Body:\n{s}\n", .{body});
 }
+
+pub fn getLatest(allocator: mem.Allocator, endpoint: []const u8) !i128 {
+    var client = http.Client{ .allocator = allocator };
+    defer client.deinit();
+
+    const uri = try std.Uri.parse(endpoint);
+
+    var buf: [1024]u8 = undefined;
+    var req = try client.open(.GET, uri, .{ .server_header_buffer = &buf });
+    defer req.deinit();
+
+    try req.send();
+    try req.finish();
+    try req.wait();
+
+    var rdr = req.reader();
+    const body = try rdr.readAllAlloc(allocator, 1024 * 1024 * 4);
+    defer allocator.free(body);
+    return std.fmt.parseInt(i128, body, 10);
+}

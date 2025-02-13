@@ -25,21 +25,32 @@ pub fn main() !void {
 
     var iterator = dir.iterate();
 
-    while (try iterator.next()) |dirContent| {
-        const file_name = try allocator.alloc(u8, dirContent.name.len);
-        defer allocator.free(file_name);
-        @memcpy(file_name, dirContent.name);
+    const latest = try http.getLatest(allocator, "http://127.0.0.1:8000/latest");
 
-        const parts = [_][]const u8{ STATS_DIR, "\\", file_name };
+    while (try iterator.next()) |dirContent| {
+        const parts = [_][]const u8{ STATS_DIR, "\\", dirContent.name };
         const full_path = try std.mem.concat(allocator, u8, &parts);
         defer allocator.free(full_path);
 
-        var data = try scenario.ScenarioData.fromCsvFile(allocator, full_path);
-        defer data.deinit();
-        const payload = try data.jsonSerialize();
-        defer allocator.free(payload);
+        var csv_file = try fs.cwd().openFile(full_path, .{});
+        defer csv_file.close();
 
-        //std.debug.print("Payload:\n{s}\n\n", .{payload});
-        try http.sendPayload(allocator, payload, "http://127.0.0.1:8000/");
+        const stat = try csv_file.stat();
+
+        if (stat.ctime > latest) {
+            std.debug.print("Stat:\n{}\t{}\n\n", .{ stat.ctime, latest });
+
+            var data = try scenario.ScenarioData.fromCsvFile(allocator, full_path);
+            defer data.deinit();
+
+            const payload = try data.jsonSerialize();
+            defer allocator.free(payload);
+
+            std.debug.print("Payload:\n{s}\n\n", .{payload});
+
+            try http.sendPayload(allocator, payload, "http://127.0.0.1:8000/insert");
+        }
     }
 }
+
+pub fn startup() !void {}

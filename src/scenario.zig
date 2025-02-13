@@ -8,7 +8,7 @@ pub const ScenarioData = struct {
     allocator: mem.Allocator,
     scenario: []const u8,
     score: []const u8,
-    challenge_start: []const u8,
+    ctime: i128,
     sens_scale: []const u8,
     sens_increment: []const u8,
     dpi: []const u8,
@@ -20,7 +20,6 @@ pub const ScenarioData = struct {
     pub fn deinit(self: *Self) void {
         self.allocator.free(self.scenario);
         self.allocator.free(self.score);
-        self.allocator.free(self.challenge_start);
         self.allocator.free(self.sens_scale);
         self.allocator.free(self.sens_increment);
         self.allocator.free(self.dpi);
@@ -37,9 +36,11 @@ pub const ScenarioData = struct {
         var tokenizer = try csv.CsvTokenizer(csv_config).init(allocator, csv_file.reader(), 65536);
         defer tokenizer.deinit();
 
+        const stat = try csv_file.stat();
+
         var scenario: []u8 = undefined;
         var score: []u8 = undefined;
-        var challenge_start: []u8 = undefined;
+        const ctime = stat.ctime;
         var sens_scale: []u8 = undefined;
         var sens_increment: []u8 = undefined;
         var dpi: []u8 = undefined;
@@ -63,11 +64,6 @@ pub const ScenarioData = struct {
                             .score => {
                                 score = try allocator.alloc(u8, token_val.len);
                                 @memcpy(score, token_val);
-                                next_stat = null;
-                            },
-                            .challenge_start => {
-                                challenge_start = try allocator.alloc(u8, token_val.len);
-                                @memcpy(challenge_start, token_val);
                                 next_stat = null;
                             },
                             .sens_scale => {
@@ -101,8 +97,6 @@ pub const ScenarioData = struct {
                             next_stat = StatType.scenario;
                         } else if (mem.eql(u8, token_val, "Score:")) {
                             next_stat = StatType.score;
-                        } else if (mem.eql(u8, token_val, "Challenge Start:")) {
-                            next_stat = StatType.challenge_start;
                         } else if (mem.eql(u8, token_val, "Sens Scale:")) {
                             next_stat = StatType.sens_scale;
                         } else if (mem.eql(u8, token_val, "Sens Increment:")) {
@@ -124,7 +118,7 @@ pub const ScenarioData = struct {
             .allocator = allocator,
             .scenario = scenario,
             .score = score,
-            .challenge_start = challenge_start,
+            .ctime = ctime,
             .sens_scale = sens_scale,
             .sens_increment = sens_increment,
             .dpi = dpi,
@@ -136,7 +130,7 @@ pub const ScenarioData = struct {
     pub fn print(self: *Self, writer: fs.File.Writer) !void {
         try writer.print("Scenario: {s}\n", .{self.scenario});
         try writer.print("Score: {s}\n", .{self.score});
-        try writer.print("Challenge Start: {s}\n", .{self.challenge_start});
+        try writer.print("Ctime: {s}\n", .{self.challenge_end});
         try writer.print("Sens Scale: {s}\n", .{self.sens_scale});
         try writer.print("Sens Increment: {s}\n", .{self.sens_increment});
         try writer.print("DPI: {s}\n", .{self.dpi});
@@ -145,11 +139,11 @@ pub const ScenarioData = struct {
     }
 
     pub fn jsonSerialize(self: *Self) ![]u8 {
-        const fmt = "{{\"scenario\":\"{s}\",\"score\":{s},\"challenge_start\":\"{s}\",\"sens_scale\":\"{s}\",\"sens_increment\":{s},\"dpi\":{s},\"fov_scale\":\"{s}\",\"fov\":{s}}}";
+        const fmt = "{{\"scenario\":\"{s}\",\"score\":{s},\"ctime\":{},\"sens_scale\":\"{s}\",\"sens_increment\":{s},\"dpi\":{s},\"fov_scale\":\"{s}\",\"fov\":{s}}}";
         const json = try std.fmt.allocPrint(self.allocator, fmt, .{
             self.scenario,
             self.score,
-            self.challenge_start,
+            self.ctime,
             self.sens_scale,
             self.sens_increment,
             self.dpi,
@@ -163,7 +157,6 @@ pub const ScenarioData = struct {
 const StatType = enum {
     scenario,
     score,
-    challenge_start,
     sens_scale,
     sens_increment,
     dpi,
