@@ -5,8 +5,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Response, Depends, Query
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
+class User(SQLModel, table=True):
+    id: int = Field(None, primary_key=True)
+    username: str = Field(None, index=True)
+    email: str = Field(None)
+    hashed_passwd: str = Field(None)
+
 class Entry(SQLModel, table=True):
     id: int = Field(None, primary_key=True)
+    user_id: int | None = Field(None, foreign_key="user.id")
     scenario: str = Field(index=True)
     score: float = Field(None)
     ctime: int = Field(None, index=True)
