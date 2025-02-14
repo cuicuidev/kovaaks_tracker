@@ -6,3 +6,7 @@ __pycache__/
 zig-out/
 
 *.db
+
+build/
+dist/
+*.spec

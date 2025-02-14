@@ -49,7 +49,7 @@ pub fn main() !void {
     defer allocator.free(jwt);
 
     // LATEST STAT
-    var latest = try http.getLatest(allocator, "http://127.0.0.1:8000/latest", jwt);
+    var latest = try http.getLatest(allocator, "https://burning-selena-cuicuidev-ea43dc33.koyeb.app/latest", jwt);
 
     // WATCHDOG
     while (true) {
@@ -74,7 +74,7 @@ pub fn iterateStatsDir(allocator: mem.Allocator, dir: fs.Dir, latest: i128, jwt:
             const payload = try data.jsonSerialize();
             defer allocator.free(payload);
 
-            try http.sendPayload(allocator, payload, "http://127.0.0.1:8000/insert", jwt);
+            try http.sendPayload(allocator, payload, "https://burning-selena-cuicuidev-ea43dc33.koyeb.app/insert", jwt);
             if (stat.ctime > highest) {
                 highest = stat.ctime;
             }

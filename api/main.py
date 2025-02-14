@@ -1,9 +1,11 @@
+import os
 import datetime
 from typing import Annotated
 
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Depends, Query, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlmodel import select
 
 from fastapi.security import OAuth2PasswordRequestForm
@@ -85,3 +87,25 @@ async def read_users_me(current_user: Annotated[User, Depends(get_current_active
 async def read_own_entries(current_user: Annotated[User, Depends(get_current_active_user)], session: SessionDep) -> list[Entry]:
     entries = session.exec(select(Entry).where(Entry.user_id == current_user.id)).all()
     return entries
+
+@app.get("/download/kovaaks_tracker.exe")
+async def download_binary():
+    filename = "kovaaks_tracker.exe"
+    file_path = os.path.join("bin", filename)
+
+    if os.path.exists(file_path):
+        file_like = open(file_path, mode="rb")
+        return StreamingResponse(file_like, media_type="application/octet-stream")
+    else:
+        return {"error" : "File not found"}
+    
+@app.get("/download/setup.exe")
+async def download_setup():
+    filename = "kovaaks_tracker_tool_setup.exe"
+    file_path = os.path.join("bin", filename)
+
+    if os.path.exists(file_path):
+        file_like = open(file_path, mode="rb")
+        return StreamingResponse(file_like, media_type="application/octet-stream")
+    else:
+        return {"error": "File not found"}
