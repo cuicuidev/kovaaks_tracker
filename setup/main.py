@@ -58,6 +58,8 @@ class Setup(tk.Tk):
 
     def show_sign_in_screen(self) -> None:
         self.clear_frames()
+        for widget in self.sign_up_frame.winfo_children():
+            widget.destroy()
 
         label = tk.Label(self.sign_in_frame, text="Sign In", font=("Arial", 12))
         label.pack(pady=20)
@@ -101,6 +103,8 @@ class Setup(tk.Tk):
 
     def show_sign_up_screen(self) -> None:
         self.clear_frames()
+        for widget in self.sign_in_frame.winfo_children():
+            widget.destroy()
 
         label = tk.Label(self.sign_up_frame, text="Register", font=("Arial", 12))
         label.pack(pady=10)
