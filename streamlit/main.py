@@ -2,7 +2,7 @@ import os
 import streamlit as st
 
 def main():
-    file_path = "kovaaks_tracker_tool_setup.exe"
+    file_path = "streamlit/kovaaks_tracker_tool_setup.exe"
 
     try:
         with open(file_path, "br") as file:
