@@ -29,8 +29,8 @@ async def insert_entry(entry: Entry, session: SessionDep, current_user: Annotate
     return entry
 
 @app.get("/latest")
-async def latest(session: SessionDep) -> int:
-    statement = select(Entry).order_by(Entry.ctime.desc())
+async def latest(session: SessionDep, current_user: Annotated[User, Depends(get_current_active_user)]) -> int:
+    statement = select(Entry).where(Entry.user_id == current_user.id).order_by(Entry.ctime.desc())
     latest = session.exec(statement).first()
     if latest:
         return latest.ctime
