@@ -19,7 +19,7 @@ DEFAULT_STATS_DIR = f"{DEFAULT_STEAM_DIR}\\steamapps\\common\\FPSAimTrainer\\FPS
 STARTUP_DIR = os.path.join(HOME, "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
 DOTFILES_DIR = os.path.join(HOME, ".kvkstracker")
 
-API_URL = "http://127.0.0.1:8000"
+API_URL = "https://burning-selena-cuicuidev-ea43dc33.koyeb.app"
 
 class Setup(tk.Tk):
 
