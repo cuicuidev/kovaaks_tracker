@@ -4,7 +4,7 @@ import threading
 
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext
-import webbrowser
+import requests
 
 TERMS_AND_SERVICES = """Terms and Services.\n""" * 100
 
@@ -19,13 +19,15 @@ DEFAULT_STATS_DIR = f"{DEFAULT_STEAM_DIR}\\steamapps\\common\\FPSAimTrainer\\FPS
 STARTUP_DIR = os.path.join(HOME, "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
 DOTFILES_DIR = os.path.join(HOME, ".kvkstracker")
 
+API_URL = "http://127.0.0.1:8000"
+
 class Setup(tk.Tk):
 
     def __init__(self) -> None:
         super().__init__()
 
         self.title("KovaaK's Tracker Tool Setup")
-        self.geometry("600x350")
+        self.geometry("600x450")
         self.resizable(False, False)
 
         self.create_widgets()
@@ -33,6 +35,8 @@ class Setup(tk.Tk):
     def create_widgets(self) -> None:
         """Create the main UI layout."""
         self.welcome_frame = tk.Frame(self)
+        self.sign_in_frame = tk.Frame(self)
+        self.sign_up_frame = tk.Frame(self)
         self.terms_frame = tk.Frame(self)
         self.install_frame = tk.Frame(self)
         self.progress_frame = tk.Frame(self)
@@ -47,10 +51,112 @@ class Setup(tk.Tk):
         label = tk.Label(self.welcome_frame, text="Welcome to KovaaK's Tracker Tool Setup", font=("Arial", 16))
         label.pack(pady=20)
 
-        next_button = tk.Button(self.welcome_frame, text="Next", command=self.show_terms_screen)
+        next_button = tk.Button(self.welcome_frame, text="Next", command=self.show_sign_in_screen)
         next_button.pack(pady=20)
 
         self.welcome_frame.pack()
+
+    def show_sign_in_screen(self) -> None:
+        self.clear_frames()
+
+        label = tk.Label(self.sign_in_frame, text="Sign In", font=("Arial", 12))
+        label.pack(pady=20)
+
+        user_label = tk.Label(self.sign_in_frame, text="Username", font=("Arial", 12))
+        user_label.pack(pady=5)
+
+        self.username_var = tk.StringVar()
+        user_entry = tk.Entry(self.sign_in_frame, textvariable=self.username_var, width=30)
+        user_entry.pack(pady=5)
+
+        passwd_label = tk.Label(self.sign_in_frame, text="Password", font=("Arial", 12))
+        passwd_label.pack(pady=5)
+
+        self.passwd_var = tk.StringVar()
+        passwd_entry = tk.Entry(self.sign_in_frame, textvariable=self.passwd_var, width=30)
+        passwd_entry.pack(pady=5)
+
+        sign_in_button = tk.Button(self.sign_in_frame, text="Sign In", command=self.obtain_access_token)
+        sign_in_button.pack(pady=5)
+
+        sign_up_button = tk.Button(self.sign_in_frame, text="Register", command=self.show_sign_up_screen)
+        sign_up_button.pack(pady=15)
+
+        self.sign_in_frame.pack()
+
+    def obtain_access_token(self) -> None:
+        response = requests.post(f"{API_URL}/auth/token", data={
+            "grant_type" : "password",
+            "username" : self.username_var.get(),
+            "password" : self.passwd_var.get(),
+            })
+        
+        try:
+            self.access_token = response.json()["access_token"]
+        except Exception as e:
+            messagebox.showerror("Error", "Authentication failed.")
+            return
+        
+        self.show_terms_screen()
+
+    def show_sign_up_screen(self) -> None:
+        self.clear_frames()
+
+        label = tk.Label(self.sign_up_frame, text="Register", font=("Arial", 12))
+        label.pack(pady=10)
+
+        email_label = tk.Label(self.sign_up_frame, text="Email", font=("Arial", 12))
+        email_label.pack(pady=5)
+
+        self.email_var = tk.StringVar()
+        email_entry = tk.Entry(self.sign_up_frame, textvariable=self.email_var, width=30)
+        email_entry.pack(pady=5)
+
+        user_label = tk.Label(self.sign_up_frame, text="Username", font=("Arial", 12))
+        user_label.pack(pady=5)
+
+        self.username_var = tk.StringVar()
+        user_entry = tk.Entry(self.sign_up_frame, textvariable=self.username_var, width=30)
+        user_entry.pack(pady=5)
+
+        passwd_label = tk.Label(self.sign_up_frame, text="Password", font=("Arial", 12))
+        passwd_label.pack(pady=5)
+
+        self.passwd_var = tk.StringVar()
+        passwd_entry = tk.Entry(self.sign_up_frame, textvariable=self.passwd_var, width=30)
+        passwd_entry.pack(pady=5)
+
+        passwd_label = tk.Label(self.sign_up_frame, text="Confirm Password", font=("Arial", 12))
+        passwd_label.pack(pady=5)
+
+        self.conf_passwd_var = tk.StringVar()
+        conf_passwd_entry = tk.Entry(self.sign_up_frame, textvariable=self.conf_passwd_var, width=30)
+        conf_passwd_entry.pack(pady=5)
+
+        sign_up_button = tk.Button(self.sign_up_frame, text="Register", command=self.sign_up_request)
+        sign_up_button.pack(pady=5)
+
+        sign_in_button = tk.Button(self.sign_up_frame, text="Sign Up", command=self.show_sign_in_screen)
+        sign_in_button.pack(pady=5)
+
+        self.sign_up_frame.pack()
+
+    def sign_up_request(self) -> None:
+        if self.passwd_var.get() != self.conf_passwd_var.get():
+            messagebox.showwarning("Passwords do not match.")
+            return
+
+        response = requests.post(f"{API_URL}/auth/signup", json={
+            "email" : self.email_var.get(),
+            "username" : self.username_var.get(),
+            "password" : self.passwd_var.get(),
+            })
+        
+        if response.status_code != 200:
+            messagebox.showerror("Error", f"Signup failed. {response.text}")
+            return
+        
+        self.obtain_access_token()
 
     def show_terms_screen(self):
         """Display the terms and conditions screen."""
@@ -125,6 +231,7 @@ class Setup(tk.Tk):
 
     def start_installation(self) -> None:
         """Start the installation process in a separate thread."""
+        self.clear_frames()
         install_dir = self.install_dir_var.get()
         steam_dir = self.steam_dir_var.get()
 
@@ -148,7 +255,6 @@ class Setup(tk.Tk):
             return
 
         stats_dir = f"{steam_dir}\\steamapps\\common\\FPSAimTrainer\\FPSAimTrainer\\stats"
-        access_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjdWljdWkiLCJleHAiOjE3NzEwMzYxMDF9.iJE1wfSbszvd1Kmfkyq-I2eqKzNkmWP2ZdHve2PpXaM"
         
         self.clear_frames()
         label = tk.Label(self.progress_frame, text="Installing...", font=("Arial", 12))
@@ -156,7 +262,7 @@ class Setup(tk.Tk):
 
         self.progress_frame.pack()
 
-        threading.Thread(target=self.install, args=(install_dir, stats_dir, access_token)).start()
+        threading.Thread(target=self.install, args=(install_dir, stats_dir, self.access_token)).start()
 
     def install(self, install_dir: str, stats_dir: str, access_token: str) -> None:
         """Extracts the app into the installation directory."""
@@ -179,6 +285,7 @@ class Setup(tk.Tk):
             self.show_complete_screen(install_dir)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to install the app. Error {e}.")
+            self.quit()
 
     def create_symlink(self, target: str, link_name: str) -> None:
         """Create a symbolic link pointing to target."""
