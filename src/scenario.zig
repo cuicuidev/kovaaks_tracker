@@ -136,7 +136,7 @@ pub const ScenarioData = struct {
     }
 
     pub fn jsonSerialize(self: *Self) ![]u8 {
-        const fmt = "{{\"scenario\":\"{s}\",\"hash\":\"{s}\",\"score\":{s},\"ctime\":{},\"sens_scale\":\"{s}\",\"sens_increment\":{s},\"dpi\":{s},\"fov_scale\":\"{s}\",\"fov\":{s}}}";
+        const fmt = "{{\"scenario\":\"{s}\",\"hash\":\"{s}\",\"score\":{s},\"ctime\":\"{}\",\"sens_scale\":\"{s}\",\"sens_increment\":{s},\"dpi\":{s},\"fov_scale\":\"{s}\",\"fov\":{s}}}";
         const json = try std.fmt.allocPrint(self.allocator, fmt, .{
             self.scenario,
             self.hash,

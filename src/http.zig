@@ -25,6 +25,7 @@ pub fn sendPayload(allocator: mem.Allocator, payload: []const u8, endpoint: []co
 
     var rdr = req.reader();
     const body = try rdr.readAllAlloc(allocator, 1024 * 1024 * 4);
+    //std.debug.print("{s}\n\n", .{body});
     defer allocator.free(body);
 }
 
@@ -49,5 +50,6 @@ pub fn getLatest(allocator: mem.Allocator, endpoint: []const u8, jwt: []const u8
     var rdr = req.reader();
     const body = try rdr.readAllAlloc(allocator, 1024 * 1024 * 4);
     defer allocator.free(body);
+    //std.debug.print("{s}\n\n", .{body});
     return std.fmt.parseInt(i128, body, 10);
 }

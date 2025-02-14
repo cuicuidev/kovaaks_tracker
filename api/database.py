@@ -30,7 +30,7 @@ class Entry(SQLModel, table=True):
     scenario: str = Field(None)
     hash: str = Field(index=True)
     score: float = Field(None)
-    ctime: int = Field(None, index=True)
+    ctime: str = Field(None, index=True)
     sens_scale: str = Field(None)
     sens_increment: float = Field(None)
     dpi: int = Field(None)
