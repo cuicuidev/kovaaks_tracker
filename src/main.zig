@@ -11,75 +11,132 @@ const io = std.io;
 const os = std.os;
 const win32 = os.windows.kernel32;
 
-const STATS_DIR = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\FPSAimTrainer\\FPSAimTrainer\\stats";
-const jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjdWljdWkiLCJleHAiOjE3NzEwMzYxMDF9.iJE1wfSbszvd1Kmfkyq-I2eqKzNkmWP2ZdHve2PpXaM";
-
 pub fn main() !void {
+    // MEM ALLOCATOR
     var gpa = heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
-
     const allocator = gpa.allocator();
 
+    // CONFIG
+    var config = try Config.readFrom(allocator, "C:\\Users\\Dmitry\\Documents\\projects\\kovaaks_tracker\\src\\config.csv");
+    defer config.deinit();
+
+    // STATS DIR
     var dir = try std.fs.openDirAbsolute(
-        STATS_DIR,
+        config.stats_dir,
         .{ .iterate = true },
     );
     defer dir.close();
 
-    // INITIAL CHECK
+    // JWT
+    const jwt = try readJWT(allocator, "C:\\Users\\Dmitry\\Documents\\projects\\kovaaks_tracker\\src\\access_token.txt");
+    defer allocator.free(jwt);
+
+    // LATEST STAT
     var latest = try http.getLatest(allocator, "http://127.0.0.1:8000/latest", jwt);
 
-    var iterator = dir.iterate();
-    while (try iterator.next()) |dirContent| {
-        const parts = [_][]const u8{ STATS_DIR, "\\", dirContent.name };
-        const full_path = try std.mem.concat(allocator, u8, &parts);
-        defer allocator.free(full_path);
+    // WATCHDOG
+    while (true) {
+        latest = try iterateStatsDir(allocator, dir, latest, jwt);
+        std.time.sleep(std.time.ns_per_s * config.time_interval_seconds);
+    }
+}
 
-        var csv_file = try fs.cwd().openFile(full_path, .{});
+pub fn iterateStatsDir(allocator: mem.Allocator, dir: fs.Dir, latest: i128, jwt: []const u8) !i128 {
+    var iterator = dir.iterate();
+    var highest = latest;
+    while (try iterator.next()) |dirContent| {
+        var csv_file = try dir.openFile(dirContent.name, .{}); //fs.cwd().openFile(full_path, .{});
         defer csv_file.close();
 
         const stat = try csv_file.stat();
 
         if (stat.ctime > latest) {
-            var data = try scenario.ScenarioData.fromCsvFile(allocator, full_path);
+            var data = try scenario.ScenarioData.fromCsvFile(allocator, csv_file);
             defer data.deinit();
 
             const payload = try data.jsonSerialize();
             defer allocator.free(payload);
 
             try http.sendPayload(allocator, payload, "http://127.0.0.1:8000/insert", jwt);
-        }
-    }
-
-    // WATCHDOG
-    latest = try http.getLatest(allocator, "http://127.0.0.1:8000/latest", jwt);
-    while (true) {
-        std.time.sleep(std.time.ns_per_s * 60);
-        iterator = dir.iterate();
-        while (try iterator.next()) |dirContent| {
-            const parts = [_][]const u8{ STATS_DIR, "\\", dirContent.name };
-            const full_path = try std.mem.concat(allocator, u8, &parts);
-            defer allocator.free(full_path);
-
-            var csv_file = try fs.cwd().openFile(full_path, .{});
-            defer csv_file.close();
-
-            const stat = try csv_file.stat();
-            var highest = latest;
-
-            if (stat.ctime > latest) {
-                var data = try scenario.ScenarioData.fromCsvFile(allocator, full_path);
-                defer data.deinit();
-
-                const payload = try data.jsonSerialize();
-                defer allocator.free(payload);
-
-                try http.sendPayload(allocator, payload, "http://127.0.0.1:8000/insert", jwt);
-                if (stat.ctime > highest) {
-                    highest = stat.ctime;
-                }
+            if (stat.ctime > highest) {
+                highest = stat.ctime;
             }
-            latest = highest;
         }
     }
+    return highest;
 }
+
+pub fn readJWT(allocator: mem.Allocator, path: []const u8) ![]u8 {
+    const file = try fs.openFileAbsolute(path, .{});
+    defer file.close();
+
+    return try file.readToEndAlloc(allocator, 256);
+}
+
+const Config = struct {
+    allocator: mem.Allocator,
+    stats_dir: []const u8,
+    time_interval_seconds: u64,
+
+    const Self = @This();
+
+    pub fn deinit(self: *Self) void {
+        self.allocator.free(self.stats_dir);
+    }
+
+    pub fn readFrom(allocator: mem.Allocator, path: []const u8) !Self {
+        const file = try fs.openFileAbsolute(path, .{});
+        defer file.close();
+
+        const reader = file.reader();
+        var tokenizer = try csv.CsvTokenizer(csv.CsvConfig{ .col_sep = ',', .row_sep = ';', .quotes = '"' }).init(allocator, reader, 512);
+        defer tokenizer.deinit();
+
+        var stats_dir: []u8 = undefined;
+        var time_interval_seconds: u64 = undefined;
+
+        var next_conf: ?ConfType = null;
+        while (try tokenizer.next()) |token| {
+            defer token.deinit();
+
+            const token_val = token.value;
+
+            switch (token.token_type) {
+                csv.TokenType.FLOAT, csv.TokenType.STRING, csv.TokenType.INT => {
+                    if (next_conf) |conf_type| {
+                        switch (conf_type) {
+                            ConfType.stats_dir => {
+                                stats_dir = try allocator.alloc(u8, token_val.len);
+                                @memcpy(stats_dir, token_val);
+                                next_conf = null;
+                            },
+                            ConfType.time_interval_seconds => {
+                                time_interval_seconds = try std.fmt.parseInt(u64, token_val, 10);
+                                next_conf = null;
+                            },
+                        }
+                    } else {
+                        if (mem.eql(u8, token_val, "stats_dir")) {
+                            next_conf = ConfType.stats_dir;
+                        } else if (mem.eql(u8, token_val, "time_interval_seconds")) {
+                            next_conf = ConfType.time_interval_seconds;
+                        }
+                    }
+                },
+                else => {},
+            }
+        }
+
+        return .{
+            .allocator = allocator,
+            .stats_dir = stats_dir,
+            .time_interval_seconds = time_interval_seconds,
+        };
+    }
+};
+
+const ConfType = enum {
+    time_interval_seconds,
+    stats_dir,
+};

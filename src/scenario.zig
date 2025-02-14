@@ -29,10 +29,7 @@ pub const ScenarioData = struct {
         self.allocator.free(self.fov_scale);
     }
 
-    pub fn fromCsvFile(allocator: mem.Allocator, path: []const u8) !Self {
-        var csv_file = try fs.cwd().openFile(path, .{});
-        defer csv_file.close();
-
+    pub fn fromCsvFile(allocator: mem.Allocator, csv_file: fs.File) !Self {
         const csv_config = csv.CsvConfig{ .col_sep = ',', .row_sep = '\n', .quotes = '"' };
         // NOTE: Buffer size is large, since carryover is not yet implemented and some tokens may split or fuse together, resulting in weird bugs
         var tokenizer = try csv.CsvTokenizer(csv_config).init(allocator, csv_file.reader(), 65536);
