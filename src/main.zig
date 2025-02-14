@@ -17,8 +17,24 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
+    // PATHS
+    const home_env_var_name = "USERPROFILE";
+    const home_dir = try std.process.getEnvVarOwned(allocator, home_env_var_name);
+    defer allocator.free(home_dir);
+
+    const config_name = ".kvkstracker\\config.csv";
+    const config_path = try std.fmt.allocPrint(allocator, "{s}\\{s}", .{ home_dir, config_name });
+    defer allocator.free(config_path);
+
+    const token_name = ".kvkstracker\\access_token.txt";
+    const token_path = try std.fmt.allocPrint(allocator, "{s}\\{s}", .{ home_dir, token_name });
+    defer allocator.free(token_path);
+
     // CONFIG
-    var config = try Config.readFrom(allocator, "C:\\Users\\Dmitry\\Documents\\projects\\kovaaks_tracker\\src\\config.csv");
+    var config = try Config.readFrom(
+        allocator,
+        config_path,
+    );
     defer config.deinit();
 
     // STATS DIR
@@ -29,7 +45,7 @@ pub fn main() !void {
     defer dir.close();
 
     // JWT
-    const jwt = try readJWT(allocator, "C:\\Users\\Dmitry\\Documents\\projects\\kovaaks_tracker\\src\\access_token.txt");
+    const jwt = try readJWT(allocator, token_path);
     defer allocator.free(jwt);
 
     // LATEST STAT
