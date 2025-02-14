@@ -97,16 +97,19 @@ async def download_binary():
         file_like = open(file_path, mode="rb")
         return StreamingResponse(file_like, media_type="application/octet-stream")
     else:
-        return {"error" : "File not found"}
+        raise HTTPException(status_code=404)
     
 @app.get("/download/setup.exe")
 async def download_setup():
     filename = "kovaaks_tracker_tool_setup.exe"
     file_path = os.path.join("api/bin", filename)
-    print(file_path)
 
     if os.path.exists(file_path):
         file_like = open(file_path, mode="rb")
         return StreamingResponse(file_like, media_type="application/octet-stream")
     else:
-        return {"error": "File not found"}
+        raise HTTPException(status_code=404)
+    
+@app.get("/")
+async def where():
+    return os.getcwd()
