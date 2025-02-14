@@ -7,6 +7,7 @@ const csv = @import("csv.zig");
 pub const ScenarioData = struct {
     allocator: mem.Allocator,
     scenario: []const u8,
+    hash: []const u8,
     score: []const u8,
     ctime: i128,
     sens_scale: []const u8,
@@ -19,6 +20,7 @@ pub const ScenarioData = struct {
 
     pub fn deinit(self: *Self) void {
         self.allocator.free(self.scenario);
+        self.allocator.free(self.hash);
         self.allocator.free(self.score);
         self.allocator.free(self.sens_scale);
         self.allocator.free(self.sens_increment);
@@ -39,6 +41,7 @@ pub const ScenarioData = struct {
         const stat = try csv_file.stat();
 
         var scenario: []u8 = undefined;
+        var hash: []u8 = undefined;
         var score: []u8 = undefined;
         const ctime = stat.ctime;
         var sens_scale: []u8 = undefined;
@@ -59,6 +62,11 @@ pub const ScenarioData = struct {
                             .scenario => {
                                 scenario = try allocator.alloc(u8, token_val.len);
                                 @memcpy(scenario, token_val);
+                                next_stat = null;
+                            },
+                            .hash => {
+                                hash = try allocator.alloc(u8, token_val.len);
+                                @memcpy(hash, token_val);
                                 next_stat = null;
                             },
                             .score => {
@@ -95,6 +103,8 @@ pub const ScenarioData = struct {
                     } else {
                         if (mem.eql(u8, token_val, "Scenario:")) {
                             next_stat = StatType.scenario;
+                        } else if (mem.eql(u8, token_val, "Hash:")) {
+                            next_stat = StatType.hash;
                         } else if (mem.eql(u8, token_val, "Score:")) {
                             next_stat = StatType.score;
                         } else if (mem.eql(u8, token_val, "Sens Scale:")) {
@@ -117,6 +127,7 @@ pub const ScenarioData = struct {
         return .{
             .allocator = allocator,
             .scenario = scenario,
+            .hash = hash,
             .score = score,
             .ctime = ctime,
             .sens_scale = sens_scale,
@@ -127,21 +138,11 @@ pub const ScenarioData = struct {
         };
     }
 
-    pub fn print(self: *Self, writer: fs.File.Writer) !void {
-        try writer.print("Scenario: {s}\n", .{self.scenario});
-        try writer.print("Score: {s}\n", .{self.score});
-        try writer.print("Ctime: {s}\n", .{self.challenge_end});
-        try writer.print("Sens Scale: {s}\n", .{self.sens_scale});
-        try writer.print("Sens Increment: {s}\n", .{self.sens_increment});
-        try writer.print("DPI: {s}\n", .{self.dpi});
-        try writer.print("FOV: {s}\n", .{self.fov});
-        try writer.print("FOV Scale: {s}\n**************************************************\n\n", .{self.fov_scale});
-    }
-
     pub fn jsonSerialize(self: *Self) ![]u8 {
-        const fmt = "{{\"scenario\":\"{s}\",\"score\":{s},\"ctime\":{},\"sens_scale\":\"{s}\",\"sens_increment\":{s},\"dpi\":{s},\"fov_scale\":\"{s}\",\"fov\":{s}}}";
+        const fmt = "{{\"scenario\":\"{s}\",\"hash\":\"{s}\",\"score\":{s},\"ctime\":{},\"sens_scale\":\"{s}\",\"sens_increment\":{s},\"dpi\":{s},\"fov_scale\":\"{s}\",\"fov\":{s}}}";
         const json = try std.fmt.allocPrint(self.allocator, fmt, .{
             self.scenario,
+            self.hash,
             self.score,
             self.ctime,
             self.sens_scale,
@@ -156,6 +157,7 @@ pub const ScenarioData = struct {
 
 const StatType = enum {
     scenario,
+    hash,
     score,
     sens_scale,
     sens_increment,

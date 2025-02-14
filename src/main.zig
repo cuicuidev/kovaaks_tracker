@@ -40,15 +40,11 @@ pub fn main() !void {
         const stat = try csv_file.stat();
 
         if (stat.ctime > latest) {
-            std.debug.print("Stat:\n{}\t{}\n\n", .{ stat.ctime, latest });
-
             var data = try scenario.ScenarioData.fromCsvFile(allocator, full_path);
             defer data.deinit();
 
             const payload = try data.jsonSerialize();
             defer allocator.free(payload);
-
-            std.debug.print("Payload:\n{s}\n\n", .{payload});
 
             try http.sendPayload(allocator, payload, "http://127.0.0.1:8000/insert");
         }
@@ -57,6 +53,7 @@ pub fn main() !void {
     // WATCHDOG
     latest = try http.getLatest(allocator, "http://127.0.0.1:8000/latest");
     while (true) {
+        std.time.sleep(std.time.ns_per_s * 60);
         iterator = dir.iterate();
         while (try iterator.next()) |dirContent| {
             const parts = [_][]const u8{ STATS_DIR, "\\", dirContent.name };
@@ -67,21 +64,21 @@ pub fn main() !void {
             defer csv_file.close();
 
             const stat = try csv_file.stat();
+            var highest = latest;
 
             if (stat.ctime > latest) {
-                std.debug.print("Stat:\n{}\t{}\n\n", .{ stat.ctime, latest });
-
                 var data = try scenario.ScenarioData.fromCsvFile(allocator, full_path);
                 defer data.deinit();
 
                 const payload = try data.jsonSerialize();
                 defer allocator.free(payload);
 
-                std.debug.print("Payload:\n{s}\n\n", .{payload});
-
                 try http.sendPayload(allocator, payload, "http://127.0.0.1:8000/insert");
-                latest = stat.ctime;
+                if (stat.ctime > highest) {
+                    highest = stat.ctime;
+                }
             }
+            latest = highest;
         }
     }
 }

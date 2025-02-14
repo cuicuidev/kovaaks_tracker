@@ -1,42 +1,15 @@
-from typing import Any, Annotated
+import datetime
+from typing import Annotated
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Response, Depends, Query
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from fastapi import FastAPI, Depends, Query, HTTPException, status
+from sqlmodel import select
 
-class User(SQLModel, table=True):
-    id: int = Field(None, primary_key=True)
-    username: str = Field(None, index=True)
-    email: str = Field(None)
-    hashed_passwd: str = Field(None)
+from fastapi.security import OAuth2PasswordRequestForm
 
-class Entry(SQLModel, table=True):
-    id: int = Field(None, primary_key=True)
-    user_id: int | None = Field(None, foreign_key="user.id")
-    scenario: str = Field(index=True)
-    score: float = Field(None)
-    ctime: int = Field(None, index=True)
-    sens_scale: str = Field(None)
-    sens_increment: float = Field(None)
-    dpi: int = Field(None)
-    fov_scale: str = Field(None)
-    fov: int = Field(None)
-
-SQLITE_FILENAME = "database2.db"
-SQLITE_URL = f"sqlite:///{SQLITE_FILENAME}"
-
-CONNECT_ARGS = {"check_same_thread" : False}
-engine = create_engine(SQLITE_URL, connect_args=CONNECT_ARGS)
-
-def create_db_and_tables():
-    SQLModel.metadata.create_all(engine)
-
-def get_session():
-    with Session(engine) as session:
-        yield session
-
-SessionDep = Annotated[Session, Depends(get_session)]
+from database import create_db_and_tables, SessionDep, Entry, User
+from auth import pwd_context, create_access_token, authenticate_user, SignUpRequest, Token, get_current_active_user
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -46,16 +19,12 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 @app.post("/insert")
-async def insert_entry(entry: Entry, session: SessionDep) -> Entry:
+async def insert_entry(entry: Entry, session: SessionDep, current_user: Annotated[User, Depends(get_current_active_user)]) -> Entry:
+    entry.user_id = current_user.id
     session.add(entry)
     session.commit()
     session.refresh(entry)
     return entry
-
-@app.get("/select")
-async def  select_entries(session: SessionDep, offset: int = 0, limit: Annotated[int, Query(le=100)] = 100) -> list[Entry]:
-    entries = session.exec(select(Entry).offset(offset).limit(limit)).all()
-    return entries
 
 @app.get("/latest")
 async def latest(session: SessionDep) -> int:
@@ -65,3 +34,54 @@ async def latest(session: SessionDep) -> int:
         return latest.ctime
     else:
         return 0
+
+@app.post("/auth/signup")
+async def create_user(request: SignUpRequest, session: SessionDep) -> User:
+    conflict = session.exec(select(User).where(
+        User.username == request.username
+        or User.email == request.email)).first()
+    if conflict is not None:
+        if conflict.email == request.email:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Email {request.username} is already in use.")
+        if conflict.username == request.username:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"User {request.username} already exists.")
+        
+    hashed_password = pwd_context.hash(request.password)
+    now = datetime.datetime.now(datetime.UTC)
+    user = User(
+        id=None,
+        username=request.username,
+        email=request.email,
+        hashed_passwd=hashed_password,
+        is_active=True,
+        is_verified=False,
+        created_at=now,
+        updated_at=now
+    )
+
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
+
+@app.post("/auth/token")
+async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], session: SessionDep) -> Token:
+    user = authenticate_user(session, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate":"Bearer"}
+        )
+    access_token = create_access_token(data={"sub": user.username})
+    return Token(access_token=access_token, token_type="bearer")
+
+@app.get("/users/me")
+async def read_users_me(current_user: Annotated[User, Depends(get_current_active_user)]) -> User:
+    return current_user
+
+
+@app.get("/users/me/entries")
+async def read_own_entries(current_user: Annotated[User, Depends(get_current_active_user)], session: SessionDep) -> list[Entry]:
+    entries = session.exec(select(Entry).where(Entry.user_id == current_user.id)).all()
+    return entries
