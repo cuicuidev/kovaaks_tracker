@@ -12,6 +12,7 @@ const os = std.os;
 const win32 = os.windows.kernel32;
 
 const STATS_DIR = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\FPSAimTrainer\\FPSAimTrainer\\stats";
+const jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjdWljdWkiLCJleHAiOjE3NzEwMzYxMDF9.iJE1wfSbszvd1Kmfkyq-I2eqKzNkmWP2ZdHve2PpXaM";
 
 pub fn main() !void {
     var gpa = heap.GeneralPurposeAllocator(.{}){};
@@ -26,7 +27,7 @@ pub fn main() !void {
     defer dir.close();
 
     // INITIAL CHECK
-    var latest = try http.getLatest(allocator, "http://127.0.0.1:8000/latest");
+    var latest = try http.getLatest(allocator, "http://127.0.0.1:8000/latest", jwt);
 
     var iterator = dir.iterate();
     while (try iterator.next()) |dirContent| {
@@ -46,12 +47,12 @@ pub fn main() !void {
             const payload = try data.jsonSerialize();
             defer allocator.free(payload);
 
-            try http.sendPayload(allocator, payload, "http://127.0.0.1:8000/insert");
+            try http.sendPayload(allocator, payload, "http://127.0.0.1:8000/insert", jwt);
         }
     }
 
     // WATCHDOG
-    latest = try http.getLatest(allocator, "http://127.0.0.1:8000/latest");
+    latest = try http.getLatest(allocator, "http://127.0.0.1:8000/latest", jwt);
     while (true) {
         std.time.sleep(std.time.ns_per_s * 60);
         iterator = dir.iterate();
@@ -73,7 +74,7 @@ pub fn main() !void {
                 const payload = try data.jsonSerialize();
                 defer allocator.free(payload);
 
-                try http.sendPayload(allocator, payload, "http://127.0.0.1:8000/insert");
+                try http.sendPayload(allocator, payload, "http://127.0.0.1:8000/insert", jwt);
                 if (stat.ctime > highest) {
                     highest = stat.ctime;
                 }
