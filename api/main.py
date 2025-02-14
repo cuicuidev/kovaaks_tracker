@@ -91,7 +91,7 @@ async def read_own_entries(current_user: Annotated[User, Depends(get_current_act
 @app.get("/download/kovaaks_tracker.exe")
 async def download_binary():
     filename = "kovaaks_tracker.exe"
-    file_path = os.path.join("bin", filename)
+    file_path = os.path.join("api/bin", filename)
 
     if os.path.exists(file_path):
         file_like = open(file_path, mode="rb")
@@ -102,7 +102,8 @@ async def download_binary():
 @app.get("/download/setup.exe")
 async def download_setup():
     filename = "kovaaks_tracker_tool_setup.exe"
-    file_path = os.path.join("bin", filename)
+    file_path = os.path.join("api/bin", filename)
+    print(file_path)
 
     if os.path.exists(file_path):
         file_like = open(file_path, mode="rb")

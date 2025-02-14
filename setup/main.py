@@ -19,7 +19,7 @@ DEFAULT_STATS_DIR = f"{DEFAULT_STEAM_DIR}\\steamapps\\common\\FPSAimTrainer\\FPS
 STARTUP_DIR = os.path.join(HOME, "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
 DOTFILES_DIR = os.path.join(HOME, ".kvkstracker")
 
-API_URL = "https://burning-selena-cuicuidev-ea43dc33.koyeb.app"
+API_URL = "https://burning-selena-cuicuidev-ea43dc33.koyeb.app" # "http://127.0.0.1:8000/"
 
 class Setup(tk.Tk):
 
@@ -279,7 +279,18 @@ class Setup(tk.Tk):
                 file.write(access_token)
         
             executable_path = os.path.join(install_dir, "kovaaks_tracker.exe")
-            shutil.copyfile("zig-out/bin/kovaaks_tracker.exe", executable_path)
+
+            try:
+                with requests.get(f"{API_URL}/download/kovaaks_tracker.exe", stream=True) as response:
+                    response.raise_for_status()
+                    with open(executable_path, "wb") as f:
+                        for chunk in response.iter_content(chunk_size=8192):
+                            f.write(chunk)
+            except requests.RequestException:
+                messagebox.showerror("Error", "Failed to download kovaaks_tracker.exe.")
+                return
+
+            # shutil.copyfile("zig-out/bin/kovaaks_tracker.exe", executable_path)
             self.create_symlink(executable_path, os.path.join(STARTUP_DIR, "kvks_tracker.exe"))
     
             self.show_complete_screen(install_dir)
