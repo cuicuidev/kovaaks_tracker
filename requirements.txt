@@ -60,3 +60,4 @@ uvicorn==0.34.0
 wcwidth==0.2.13
 python-dotenv
 psycopg[binary,pool]
+plotly
