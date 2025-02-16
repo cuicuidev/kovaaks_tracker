@@ -1,6 +1,6 @@
 import os
-import shutil
 import threading
+import winreg
 
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext
@@ -18,6 +18,14 @@ DEFAULT_STATS_DIR = f"{DEFAULT_STEAM_DIR}\\steamapps\\common\\FPSAimTrainer\\FPS
 
 STARTUP_DIR = os.path.join(HOME, "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
 DOTFILES_DIR = os.path.join(HOME, ".kvkstracker")
+
+user_profile = os.environ['USERPROFILE']
+
+key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders")
+
+desktop_path, _ = winreg.QueryValueEx(key, "Desktop")
+
+DESKTOP = os.path.expandvars(desktop_path)
 
 API_URL = "https://chubby-krystyna-cuicuidev-da9ab1a9.koyeb.app" # "http://127.0.0.1:8000/"
 
@@ -295,7 +303,7 @@ class Setup(tk.Tk):
                 return
 
             # shutil.copyfile("zig-out/bin/kovaaks_tracker.exe", executable_path)
-            self.create_symlink(executable_path, os.path.join(STARTUP_DIR, "kvks_tracker.exe"))
+            self.create_symlink(executable_path, os.path.join(DESKTOP, "KovaaK's Tracker Tool.exe"))
     
             self.show_complete_screen(install_dir)
         except Exception as e:
