@@ -17,6 +17,10 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
+    // STDOUT
+    const stdout = io.getStdOut();
+    const writer = stdout.writer();
+
     // PATHS
     const home_env_var_name = "USERPROFILE";
     const home_dir = try std.process.getEnvVarOwned(allocator, home_env_var_name);
@@ -49,16 +53,16 @@ pub fn main() !void {
     defer allocator.free(jwt);
 
     // LATEST STAT
-    var latest = try http.getLatest(allocator, "https://chubby-krystyna-cuicuidev-da9ab1a9.koyeb.app/latest", jwt);
+    var latest = try http.getLatest(allocator, "https://chubby-krystyna-cuicuidev-da9ab1a9.koyeb.app/latest", jwt, writer);
 
     // WATCHDOG
     while (true) {
-        latest = try iterateStatsDir(allocator, dir, latest, jwt);
+        latest = try iterateStatsDir(allocator, dir, latest, jwt, writer);
         std.time.sleep(std.time.ns_per_s * config.time_interval_seconds);
     }
 }
 
-pub fn iterateStatsDir(allocator: mem.Allocator, dir: fs.Dir, latest: i128, jwt: []const u8) !i128 {
+pub fn iterateStatsDir(allocator: mem.Allocator, dir: fs.Dir, latest: i128, jwt: []const u8, writer: fs.File.Writer) !i128 {
     var iterator = dir.iterate();
     var highest = latest;
     while (try iterator.next()) |dirContent| {
@@ -71,10 +75,7 @@ pub fn iterateStatsDir(allocator: mem.Allocator, dir: fs.Dir, latest: i128, jwt:
             var data = try scenario.ScenarioData.fromCsvFile(allocator, csv_file);
             defer data.deinit();
 
-            const payload = try data.jsonSerialize();
-            defer allocator.free(payload);
-
-            try http.sendPayload(allocator, payload, "https://chubby-krystyna-cuicuidev-da9ab1a9.koyeb.app/insert", jwt);
+            try http.sendPayload(allocator, &data, "https://chubby-krystyna-cuicuidev-da9ab1a9.koyeb.app/insert", jwt, writer);
             if (stat.ctime > highest) {
                 highest = stat.ctime;
             }

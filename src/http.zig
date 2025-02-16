@@ -1,8 +1,15 @@
 const std = @import("std");
 const mem = std.mem;
 const http = std.http;
+const fs = std.fs;
 
-pub fn sendPayload(allocator: mem.Allocator, payload: []const u8, endpoint: []const u8, jwt: []const u8) !void {
+const scenario = @import("scenario.zig");
+
+pub fn sendPayload(allocator: mem.Allocator, data: *scenario.ScenarioData, endpoint: []const u8, jwt: []const u8, writer: fs.File.Writer) !void {
+    const payload = try data.jsonSerialize();
+    defer allocator.free(payload);
+
+    try writer.print("Sending scenario <{s}> | Score: {s}\n", .{ data.scenario, data.score });
     var client = http.Client{ .allocator = allocator };
     defer client.deinit();
 
@@ -25,11 +32,15 @@ pub fn sendPayload(allocator: mem.Allocator, payload: []const u8, endpoint: []co
 
     var rdr = req.reader();
     const body = try rdr.readAllAlloc(allocator, 1024 * 1024 * 4);
-    //std.debug.print("{s}\n\n", .{body});
     defer allocator.free(body);
+
+    switch (req.response.status) {
+        .ok => try writer.print("{} | Scenario <{s}> sent successfully\n\n", .{ req.response.status, data.scenario }),
+        else => try writer.print("Error: <{}>\n\n", .{req.response.status}),
+    }
 }
 
-pub fn getLatest(allocator: mem.Allocator, endpoint: []const u8, jwt: []const u8) !i128 {
+pub fn getLatest(allocator: mem.Allocator, endpoint: []const u8, jwt: []const u8, writer: fs.File.Writer) !i128 {
     var client = http.Client{ .allocator = allocator };
     defer client.deinit();
 
@@ -50,6 +61,6 @@ pub fn getLatest(allocator: mem.Allocator, endpoint: []const u8, jwt: []const u8
     var rdr = req.reader();
     const body = try rdr.readAllAlloc(allocator, 1024 * 1024 * 4);
     defer allocator.free(body);
-    //std.debug.print("{s}\n\n", .{body});
+    try writer.print("Latest timestamp: {s}\n\n", .{body});
     return std.fmt.parseInt(i128, body, 10);
 }
