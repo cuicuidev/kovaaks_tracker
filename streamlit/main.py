@@ -6,16 +6,25 @@ import datetime
 import pandas as pd
 import plotly.express as px
 
+from benchmarks import Benchmarks, Scenarios
+
 API_URL = "https://chubby-krystyna-cuicuidev-da9ab1a9.koyeb.app"
 
 def main():
+
+    st.set_page_config(layout="wide", page_title="Aimalytics")
 
     if "access_token" not in st.session_state:
         st.session_state["access_token"] = None
     if "username" not in st.session_state:
         st.session_state["username"] = None
 
-    st.title("KovaaK's Tracking Tool")
+    if not st.session_state["access_token"]:
+        st.title("Welcome to Aimalytics")
+        st.header("The unofficial KovaaK's Tracking Tool.")
+        st.write("Sign in to see your current progress!")
+    else:
+        st.title(f"Aimalytics: {st.session_state['username']}")
     st.sidebar.write("### Download")
 
     file_path = "streamlit/kovaaks_tracker_tool_setup.exe"
@@ -37,7 +46,7 @@ def main():
     authenticate()
 
     if st.session_state["access_token"]:
-        s4, s5 =  st.tabs(["Season 4", "Season 5"])
+        s4, s5 =  st.tabs(["VT Season 4", "VT Season 5"])
         show_season(s4, 4, "intermediate")
         show_season(s5, 5, "intermediate")
 
