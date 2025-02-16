@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Depends, Query, HTTPException, status
 from fastapi.responses import StreamingResponse
-from sqlmodel import select
+from sqlmodel import select, or_
 
 from fastapi.security import OAuth2PasswordRequestForm
 
@@ -90,11 +90,8 @@ async def read_own_entries(current_user: Annotated[User, Depends(get_current_act
 
 @app.get("/entries/voltaic-s5-intermediate")
 async def get_voltaic_s5_intermediate(current_user: Annotated[User, Depends(get_current_active_user)], session: SessionDep) -> list[Entry]:
-    # raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED)
     user_entries = select(Entry).where(Entry.user_id == current_user.id)
-    voltaic_entries = user_entries.where(
-        any([Entry.hash == hash for hash in VOLTAIC_S5_INTERMEDIATE])
-    )
+    voltaic_entries = user_entries.where(or_(Entry.hash == hash for hash in VOLTAIC_S5_INTERMEDIATE))
     return session.exec(voltaic_entries).all()
 
 VOLTAIC_S5_INTERMEDIATE = [
@@ -116,6 +113,32 @@ VOLTAIC_S5_INTERMEDIATE = [
     "138c732d61151697949af4a3f51311fa", # FLY TS
     "e3b4fdab121562a8d4c8c2ac426c890c", # CONTROL TS
     "7cd5eee66632ebec0c33218d218ebf95", # PENTA BOUNCE
+]
+
+
+@app.get("/entries/voltaic-s4-intermediate")
+async def get_voltaic_s4_intermediate(current_user: Annotated[User, Depends(get_current_active_user)], session: SessionDep) -> list[Entry]:
+    user_entries = select(Entry).where(Entry.user_id == current_user.id)
+    voltaic_entries = user_entries.where(or_(Entry.hash == hash for hash in VOLTAIC_S4_INTERMEDIATE))
+    return session.exec(voltaic_entries).all()
+
+VOLTAIC_S4_INTERMEDIATE = [
+    "0e4785198aac3526bea5c63cb88c41bf", # PASU
+    "8a238e56c5372398b70c77ed3a133d01", # BOUNCE
+    "ca343c4048e7babd34a36eb65d5df067", # 1W5TS
+    "f98dfd4942f49d17ab440317418d5dba", # MULTICLICK
+    "0b50642a2f7f3efc2d39d73afc9c01db", # ANGLESTRAFE
+    "b72788440414dde22b8acc41b10f9468", # ARCSTRAFE
+    "7e378d048c3f2bdf4c8f724865936cf3", # SMOOTHBOT
+    "e28d15770bc2013d52b4b35a57091045", # PRECISEORB
+    "6f7f7473046a0fe6dfc8c1ce151e2a71", # PLAZA
+    "6c8a32e397f020abbfa5cc2b07879fab", # AIR
+    "73539760c5c49c16266c2976edd8ba85", # PATSTRAFE
+    "49e0a808d63ee6752eda5ad8a0d6fe35", # AIRSTRAFE
+    "5c49d3f52ad8b4eff3b8b1d903ae6df3", # PSALM TS
+    "b3c1d9dff3828d84b09ed6fc76749c67", # SKY TS
+    "c66d6eb5fb3d54f32bb79ef2c542bf35", # EVA TS
+    "d2407fa3f4c2567ce8736fbac4ecee6c", # BOUNCE TS
 ]
 
 @app.get("/download/kovaaks_tracker.exe")
