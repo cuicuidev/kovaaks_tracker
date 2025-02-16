@@ -16,34 +16,33 @@ def main():
         st.session_state["username"] = None
 
     st.title("KovaaK's Tracking Tool")
-    st.write("### Downloads")
+    st.sidebar.write("### Download")
 
     file_path = "streamlit/kovaaks_tracker_tool_setup.exe"
 
     try:
         with open(file_path, "br") as file:
             file_content = file.read()
-            st.download_button(
+            st.sidebar.download_button(
                 label="Windows x64",
                 data=file_content,
                 file_name=os.path.basename(file_path),
                 mime="application/octet-stream"
             )
     except FileNotFoundError:
-        st.error(f"Error: Setup file not found at path: {file_path}")
+        st.sidebar.error(f"Error: Setup file not found at path: {file_path}")
     except Exception as e:
-        st.error(f"An error occurred: {e}")
+        st.sidebar.error(f"An error occurred: {e}")
 
     authenticate()
 
     if st.session_state["access_token"]:
-        #show_season(4, "novice")
-        show_season(4, "intermediate")
-        #show_season(5, "novice")
-        show_season(5, "intermediate")
+        s4, s5 =  st.tabs(["Season 4", "Season 5"])
+        show_season(s4, 4, "intermediate")
+        show_season(s5, 5, "intermediate")
 
 
-def show_season(season, difficulty):
+def show_season(anchor, season, difficulty):
     response = requests.get(f"{API_URL}/entries/voltaic-s{season}-{difficulty}", headers={"Authorization" : f"Bearer {st.session_state['access_token']}"})
     data = response.json()
     if data:
@@ -51,7 +50,7 @@ def show_season(season, difficulty):
         df.loc[:,"ctime"] = df["ctime"].apply(lambda x: datetime.datetime.fromtimestamp(float(x)/1_000_000_000))
 
         fig = px.line(data_frame=df, x="ctime", y="score", color="scenario")
-        st.plotly_chart(fig)
+        anchor.plotly_chart(fig)
 
 def authenticate():
     if not st.session_state["access_token"]:
@@ -67,7 +66,7 @@ def authenticate():
                 st.session_state["username"] = username
                 st.rerun()
     else:
-        st.sidebar.write(f"Signed in as {st.session_state['username']}")
+        st.sidebar.write(f"Signed in as **{st.session_state['username']}**")
         if st.sidebar.button("Sign out"):
             st.session_state["access_token"] = None
             st.rerun()
