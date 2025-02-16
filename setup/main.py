@@ -332,8 +332,7 @@ class Setup(tk.Tk):
         self.complete_frame.pack()
 
     def finish(self, install_dir: str) -> None:
-        os.startfile(os.path.join(install_dir, "kovaaks_tracker.exe"), show_cmd=0)
-        #os.startfile(r"C:\Users\Dmitry\Documents\projects\kovaaks_tracker\zig-out\bin\kovaaks_tracker.exe", show_cmd=0)
+        # os.startfile(os.path.join(install_dir, "kovaaks_tracker.exe"))
         self.quit()
 
     def clear_frames(self) -> None:
