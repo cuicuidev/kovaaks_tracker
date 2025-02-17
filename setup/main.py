@@ -1,6 +1,8 @@
 import os
+import sys
 import threading
 import winreg
+import ctypes
 
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext
@@ -340,6 +342,32 @@ class Setup(tk.Tk):
         for widget in self.winfo_children():
             widget.pack_forget()
 
+def is_admin():
+    """Check if the script is running with admin privileges."""
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin()
+    except Exception:
+        return False
+
+def request_admin_privileges():
+        """Relaunch the script with admin privileges."""
+        if os.name == "nt":
+            try:
+                pythonw_executable = os.path.join(os.path.dirname(sys.executable), 'pythonw.exe')
+                ctypes.windll.shell32.ShellExecuteW(None, "runas", pythonw_executable, " ".join(sys.argv), None, 1)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to request admin privileges: {e}")
+
+def main() -> None:
+    
+    try:
+        if not is_admin():
+            request_admin_privileges()
+            return
+        app = Setup()
+        app.mainloop()
+    except: pass
+
+
 if __name__ == "__main__":
-    setup = Setup()
-    setup.mainloop()
+    main()
