@@ -42,10 +42,14 @@ pub fn main() !void {
     defer config.deinit();
 
     // STATS DIR
-    var dir = try std.fs.openDirAbsolute(
+    var dir = std.fs.openDirAbsolute(
         config.stats_dir,
         .{ .iterate = true },
-    );
+    ) catch |err| {
+        switch (err) {
+            else => return err,
+        }
+    };
     defer dir.close();
 
     // JWT
