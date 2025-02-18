@@ -6,7 +6,7 @@ import datetime
 import pandas as pd
 import plotly.express as px
 
-from benchmarks import Benchmarks, Scenarios
+from benchmarks import Benchmarks, Scenarios, Benchmark
 
 API_URL = "https://chubby-krystyna-cuicuidev-da9ab1a9.koyeb.app"
 
@@ -48,7 +48,7 @@ def main():
     if st.session_state["access_token"]:
         s4, s5 =  st.tabs(["VT Season 4", "VT Season 5"])
         show_season(s4, 4, "intermediate")
-        show_season(s5, 5, "intermediate")
+        #show_season(s5, 5, "intermediate")
 
 
 def show_season(anchor, season, difficulty):
@@ -57,6 +57,23 @@ def show_season(anchor, season, difficulty):
     if data:
         df = pd.DataFrame(data).sort_values("ctime")
         df.loc[:,"ctime"] = df["ctime"].apply(lambda x: datetime.datetime.fromtimestamp(float(x)/1_000_000_000))
+        df.loc[:,"scenario"] = df["scenario"].str.lower()
+        st.dataframe(df)
+
+        if season == 4 and difficulty == "intermediate":
+            stats = {}
+            for b_data in Benchmarks:
+                name, benchmark = b_data.name, b_data.value
+                if name[:3] == "int":
+
+                    highest_a = df.groupby("scenario")["score"].max()[" ".join(benchmark.scenario_a.name.split("_"))]
+                    highest_b = df.groupby("scenario")["score"].max()[" ".join(benchmark.scenario_a.name.split("_"))]
+                    stats[name] = benchmark.energy(highest_a, highest_b)
+                    st.sidebar.write(f"{name}: {stats[name]}")
+
+        elif season == 5 and difficulty == "intermediate":
+            pass
+        else: assert False
 
         fig = px.line(data_frame=df, x="ctime", y="score", color="scenario")
         anchor.plotly_chart(fig)
