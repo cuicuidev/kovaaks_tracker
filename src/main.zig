@@ -47,7 +47,16 @@ pub fn main() !void {
         .{ .iterate = true },
     ) catch |err| {
         switch (err) {
-            else => return err,
+            error.FileNotFound => {
+                try writer.print("error.FileNotFound -> \"{s}\"", .{config.stats_dir});
+                std.time.sleep(std.time.ns_per_s * 5);
+                return err;
+            },
+            else => {
+                try writer.print("Error: {}", .{err});
+                std.time.sleep(std.time.ns_per_s * 3);
+                return err;
+            },
         }
     };
     defer dir.close();
