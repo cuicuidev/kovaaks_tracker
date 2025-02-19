@@ -215,16 +215,16 @@ class Setup(tk.Tk):
         browse_button = tk.Button(self.install_frame, text="Browse", command=self.select_install_dir)
         browse_button.pack(pady=5)
 
-        label_steam = tk.Label(self.install_frame, text="Choose the Steam directory", font=("Arial", 12))
-        label_steam.pack(pady=10)
+        label_stats = tk.Label(self.install_frame, text="Choose the stats folder path", font=("Arial", 12))
+        label_stats.pack(pady=10)
 
-        self.steam_dir_var = tk.StringVar(value=DEFAULT_STEAM_DIR)
+        self.stats_dir_var = tk.StringVar(value=DEFAULT_STATS_DIR)
 
-        steam_entry = tk.Entry(self.install_frame, textvariable=self.steam_dir_var, width=50)
-        steam_entry.pack(pady=5)
+        stats_entry = tk.Entry(self.install_frame, textvariable=self.stats_dir_var, width=50)
+        stats_entry.pack(pady=5)
 
-        browse_steam_button = tk.Button(self.install_frame, text="Browse", command=self.select_steam_dir)
-        browse_steam_button.pack(pady=5)
+        browse_stats_button = tk.Button(self.install_frame, text="Browse", command=self.select_stats_dir)
+        browse_stats_button.pack(pady=5)
 
         install_button = tk.Button(self.install_frame, text="Install", command=self.start_installation)
         install_button.pack(pady=20)
@@ -237,24 +237,24 @@ class Setup(tk.Tk):
         if dir_path:
             self.install_dir_var.set(dir_path)
 
-    def select_steam_dir(self) -> None:
-        """Open a file dialog for Steam path selection."""
+    def select_stats_dir(self) -> None:
+        """Open a file dialog for stats path selection."""
         dir_path = filedialog.askdirectory()
         if dir_path:
-            self.steam_dir_var.set(dir_path)
+            self.stats_dir_var.set(dir_path)
 
     def start_installation(self) -> None:
         """Start the installation process in a separate thread."""
         self.clear_frames()
         install_dir = self.install_dir_var.get()
-        steam_dir = self.steam_dir_var.get()
+        stats_dir = self.stats_dir_var.get()
 
         if not install_dir:
             messagebox.showwarning("Warning", "Please select an installation directory.")
             return
         
-        if not steam_dir:
-            messagebox.showwarning("Warning", "Please specify where Steam is installed.")
+        if not stats_dir:
+            messagebox.showwarning("Warning", "Please specify where the stats folder is located.")
             return
         
         if not os.path.exists(install_dir):
@@ -264,11 +264,9 @@ class Setup(tk.Tk):
                 messagebox.showerror("Error", f"Failed to initialize install directory: {e}")
                 return
 
-        if not os.path.exists(steam_dir):
-            messagebox.showerror("Error", f"Steam not found at <{steam_dir}>.")
+        if not os.path.exists(stats_dir):
+            messagebox.showerror("Error", f"Stats not found at <{stats_dir}>.")
             return
-
-        stats_dir = f"{steam_dir}\\steamapps\\common\\FPSAimTrainer\\FPSAimTrainer\\stats"
         
         self.clear_frames()
         label = tk.Label(self.progress_frame, text="Installing...", font=("Arial", 12))
