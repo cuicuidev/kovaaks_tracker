@@ -52,11 +52,6 @@ pub fn main() !void {
                 std.time.sleep(std.time.ns_per_s * 5);
                 return err;
             },
-            error.PermissionDenied => {
-                try writer.print("error.PermissionDenied.", .{});
-                std.time.sleep(std.time.ns_per_s * 5);
-                return err;
-            },
             else => {
                 try writer.print("Error: {}\n\nPlease report this issue to support@aimalytics.gg", .{err});
                 std.time.sleep(std.time.ns_per_s * 5);
