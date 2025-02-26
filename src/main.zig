@@ -48,13 +48,13 @@ pub fn main() !void {
     ) catch |err| {
         switch (err) {
             error.FileNotFound => {
-                try writer.print("error.FileNotFound -> \"{s}\"", .{config.stats_dir});
+                try writer.print("error.FileNotFound -> \"{s}\"\n\nPlease reinstall Aimalytics Tracker and specify the correct stats folder path...", .{config.stats_dir});
                 std.time.sleep(std.time.ns_per_s * 5);
                 return err;
             },
             else => {
-                try writer.print("Error: {}", .{err});
-                std.time.sleep(std.time.ns_per_s * 3);
+                try writer.print("Error: {}\n\nPlease report this issue to support@aimalytics.gg", .{err});
+                std.time.sleep(std.time.ns_per_s * 5);
                 return err;
             },
         }
