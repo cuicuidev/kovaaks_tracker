@@ -75,6 +75,7 @@ pub fn main() !void {
     }
 }
 
+/// This function iterates over a dir and sends the payload to the API
 pub fn iterateStatsDir(allocator: mem.Allocator, dir: fs.Dir, latest: i128, jwt: []const u8, writer: fs.File.Writer) !i128 {
     var iterator = dir.iterate();
     var highest = latest;
