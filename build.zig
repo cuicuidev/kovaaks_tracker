@@ -113,12 +113,12 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&run_lib_unit_tests.step);
     test_step.dependOn(&run_exe_unit_tests.step);
 
-    const zqlite = b.dependency("zqlite", .{
-        .target = target,
-        .optimize = optimize,
-    });
+    // const zqlite = b.dependency("zqlite", .{
+    //     .target = target,
+    //     .optimize = optimize,
+    // });
 
-    exe.linkLibC();
-    exe.linkSystemLibrary("sqlite3");
-    exe.root_module.addImport("zqlite", zqlite.module("zqlite"));
+    // exe.linkLibC();
+    // exe.linkSystemLibrary("sqlite3");
+    // exe.root_module.addImport("zqlite", zqlite.module("zqlite"));
 }

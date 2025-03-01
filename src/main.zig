@@ -26,13 +26,19 @@ pub fn main() !void {
     const home_dir = try std.process.getEnvVarOwned(allocator, home_env_var_name);
     defer allocator.free(home_dir);
 
+    try writer.print("HOME: {s}\n", .{home_dir});
+
     const config_name = ".kvkstracker\\config.csv";
     const config_path = try std.fmt.allocPrint(allocator, "{s}\\{s}", .{ home_dir, config_name });
     defer allocator.free(config_path);
 
+    try writer.print("Config location: {s}\n", .{config_path});
+
     const token_name = ".kvkstracker\\access_token.txt";
     const token_path = try std.fmt.allocPrint(allocator, "{s}\\{s}", .{ home_dir, token_name });
     defer allocator.free(token_path);
+
+    try writer.print("Access token location: {s}\n", .{token_path});
 
     // CONFIG
     var config = try Config.readFrom(
@@ -61,12 +67,18 @@ pub fn main() !void {
     };
     defer dir.close();
 
+    try writer.print("Opened stats dir: {s}\n", .{config.stats_dir});
+
     // JWT
     const jwt = try readJWT(allocator, token_path);
     defer allocator.free(jwt);
 
+    try writer.print("Access token: {s}\n", .{config.stats_dir});
+
     // LATEST STAT
     var latest = try http.getLatest(allocator, "https://chubby-krystyna-cuicuidev-da9ab1a9.koyeb.app/latest", jwt, writer);
+
+    try writer.print("Latest timestamp: {}\n", .{latest});
 
     // WATCHDOG
     while (true) {
