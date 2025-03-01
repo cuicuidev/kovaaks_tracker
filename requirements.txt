@@ -61,3 +61,4 @@ wcwidth==0.2.13
 python-dotenv
 psycopg[binary,pool]
 plotly
+scipy
