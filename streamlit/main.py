@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 
 from benchmarks import IntermediateVT5
 
-API_URL = "https://chubby-krystyna-cuicuidev-da9ab1a9.koyeb.app"
+API_URL = "http://127.0.0.1:8000"# "https://chubby-krystyna-cuicuidev-da9ab1a9.koyeb.app"
 
 BENCHMARK_CATEGORIES = ["Dynamic", "Static", "Linear","Precise", "Reactive", "Control","Speed", "Evasive", "Stability"]
 
@@ -55,9 +55,7 @@ def main():
         show_season(nov, 5, "novice")
         show_season(int_, 5, "intermediate")
         show_season(adv, 5, "advanced")
-        st.sidebar.write("---")
-
-        
+        st.sidebar.write("---")        
 
 def show_season(anchor, season, difficulty):
     if difficulty == "novice" or difficulty == "advanced":
@@ -88,12 +86,13 @@ def show_season(anchor, season, difficulty):
             serie = parse_pair(df_bench)
             series.append(serie)
             
-        df_energy_cummax = pd.concat(series, axis=1)
-        fig_energy_progress = px.line(stats.hmean(df_energy_cummax,axis=1), height=400)
+        df_energy_cummax = pd.concat(series, axis=1).dropna()
+        fig_energy_progress = px.line(x=df_energy_cummax.index, y=stats.hmean(df_energy_cummax,axis=1), height=400)
 
         # All time max score for radar graph
         max_ = df_energy_cummax.max(axis=0)
         fig_radar = px.line_polar(theta=BENCHMARK_CATEGORIES, r=max_.values, line_close=True, range_r=[400,900])
+        fig_radar.update_layout(polar=dict(bgcolor = "rgba(0.0, 0.0, 0.0, 0.0)"))
 
         # Synthetic data as a placeholder
         random_data = np.expm1(np.random.normal(5.398594934535208, 1, 1000))
