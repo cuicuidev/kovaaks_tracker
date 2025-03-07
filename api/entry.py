@@ -9,11 +9,18 @@ from fastapi.routing import APIRouter
 from sqlmodel import select, or_
 from sqlmodel.sql import _expression_select_cls as sql_types
 
+from pydantic import BaseModel
+
 
 from database import User, SessionDep, Entry
 
 from auth import get_current_active_user
 from voltaic import VOLTAIC
+
+class BenchmarkResponse(BaseModel):
+    entries: list[Entry]
+    thresholds: dict[str, tuple[int, int, int, int]]
+    energy_thresholds: tuple[int, int, int, int]
 
 # ----------------------------------------- ENDPOINTS -----------------------------------------
 
@@ -26,19 +33,26 @@ async def read_own_entries(
         current_user: Annotated[User, Depends(get_current_active_user)],
         session: SessionDep,
         date_query: Optional[str],
-    ) -> list[Entry]:
+    ) -> BenchmarkResponse:
 
     s = VOLTAIC.get(season)
     if s is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"Season {season} not found.")
     
-    d = s.get(difficulty)
-    if d is None:
+    thresholds = s.get(difficulty)
+    if thresholds is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"Difficulty {difficulty} not found.")
 
-    base_query = select(Entry).where(Entry.user_id == current_user.id).where(or_(Entry.hash == hash for hash in d))
+    base_query = select(Entry).where(Entry.user_id == current_user.id).where(or_(Entry.hash == hash for hash in thresholds.keys()))
     query = parse_date_query(date_query, base_query)
-    return session.exec(query).all()
+    entries = session.exec(query).all()
+    if difficulty == "novice":
+        energy_thresholds = 100, 200, 300, 400
+    elif difficulty == "intermediate":
+        energy_thresholds = 500, 600, 700, 800
+    elif difficulty == "advanced":
+        energy_thresholds = 900, 1000, 1100, 1200
+    return BenchmarkResponse(entries=entries, thresholds=thresholds, energy_thresholds=energy_thresholds)
 
 def parse_date_query(date_query: Optional[str], base_query: sql_types.SelectOfScalar) -> sql_types.SelectOfScalar:
     if date_query is None or date_query == "all":

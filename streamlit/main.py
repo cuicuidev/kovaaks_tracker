@@ -9,7 +9,7 @@ from scipy import stats
 import plotly.express as px
 import plotly.graph_objects as go
 
-from benchmarks import IntermediateVT5
+from benchmarks import Benchmark
 
 API_URL = "http://127.0.0.1:8000"# "https://chubby-krystyna-cuicuidev-da9ab1a9.koyeb.app"
 
@@ -58,20 +58,18 @@ def main():
         st.sidebar.write("---")        
 
 def show_season(anchor, season, difficulty):
-    if difficulty == "novice" or difficulty == "advanced":
-        anchor.warning(f"Difficulty {difficulty} not yet supported :(")
-        return
-    response = requests.get(f"{API_URL}/entries/voltaic-s{season}-{difficulty}", headers={"Authorization" : f"Bearer {st.session_state['access_token']}"})
+
+    response = requests.get(f"{API_URL}/entry/me/vt-s{season}-{difficulty}/all", headers={"Authorization" : f"Bearer {st.session_state['access_token']}"})
     data = response.json()
 
     if data:
-        df = pd.DataFrame(data)
+        df = pd.DataFrame(data["entries"])
         df.loc[:,"ctime"] = df["ctime"].apply(lambda x: datetime.datetime.fromtimestamp(float(x)/1_000_000_000))
 
         # Get the daily max score
-        benchmark = IntermediateVT5()
+        benchmark = Benchmark(thresholds=data["thresholds"], energy_thresholds=data["energy_thresholds"])
         dfs = []
-        for hash_ in benchmark.VOLTAIC_S5_INTERMEDIATE:
+        for hash_ in benchmark.thresholds.keys():
             df_ = df[df["hash"] == hash_]
             scores_series = df_.set_index(df_["ctime"]).resample("D")["score"].max().apply(lambda x: benchmark.get_energy(x, hash_))
             scores_series.name = df_["scenario"].dropna().unique()[0]
@@ -91,7 +89,7 @@ def show_season(anchor, season, difficulty):
 
         # All time max score for radar graph
         max_ = df_energy_cummax.max(axis=0)
-        fig_radar = px.line_polar(theta=BENCHMARK_CATEGORIES, r=max_.values, line_close=True, range_r=[400,900])
+        fig_radar = px.line_polar(theta=BENCHMARK_CATEGORIES, r=max_.values, line_close=True, range_r=[data["energy_thresholds"][0] - 100, data["energy_thresholds"][-1] + 100], )
         fig_radar.update_layout(polar=dict(bgcolor = "rgba(0.0, 0.0, 0.0, 0.0)"))
 
         # Synthetic data as a placeholder
