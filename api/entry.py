@@ -13,33 +13,7 @@ from sqlmodel.sql import _expression_select_cls as sql_types
 from database import User, SessionDep, Entry
 
 from auth import get_current_active_user
-
-# ----------------------------------------- CONSTANTS -----------------------------------------
-
-VOLTAIC = {
-    5 : {
-        "intermediate" : [
-            "830238e82c367ad2ba40df1da9968131", # PASU
-            "86f9526f57828ad981f6c93b35811f94", # POPCORN
-            "37975ba4bbbd5f9c593e7dbd72794baa", # 1W3TS
-            "5c7668cf07b550bb2b7956f5709cf84e", # WW5T
-            "ec8acdea37fa767767d705e389db1463", # FROGTAGON
-            "47124ba125c1807fc7deb011c2f545a7", # FLOATING HEADS
-            "b11e423dba738357ce774a01422e9d91", # PGT
-            "ff38084d283c4e285150faee9c6b2832", # SNAKE TRACK
-            "c4c11bf8a727b6e6c836138535bd0879", # AETHER
-            "489b27e681807e0212eef50241bb0769", # GROUND
-            "865d54422da5368dc290d1bbc2b9b566", # RAW CONTROL
-            "a5fa9fbc3d55851b11534c60b85a9247", # CONTROLSPHERE
-            "dfb397975f6fcec5bd2ebf3cd0b7a66a", # DOT TS
-            "03d6156260b1b2b7893b746354b889c2", # EDDIE TS
-            "ff777f42a21d6ddcf8791caf2821a2bd", # DRIFT TS
-            "138c732d61151697949af4a3f51311fa", # FLY TS
-            "e3b4fdab121562a8d4c8c2ac426c890c", # CONTROL TS
-            "7cd5eee66632ebec0c33218d218ebf95", # PENTA BOUNCE
-        ],
-    }
-}
+from voltaic import VOLTAIC
 
 # ----------------------------------------- ENDPOINTS -----------------------------------------
 
