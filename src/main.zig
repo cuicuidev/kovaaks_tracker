@@ -73,10 +73,15 @@ pub fn main() !void {
     const jwt = try readJWT(allocator, token_path);
     defer allocator.free(jwt);
 
-    try writer.print("Access token: {s}\n", .{config.stats_dir});
+    try writer.print("Access token: {s}\n", .{jwt});
 
     // LATEST STAT
-    var latest = try http.getLatest(allocator, "https://chubby-krystyna-cuicuidev-da9ab1a9.koyeb.app/latest", jwt, writer);
+    const latest_endpoint = "http://127.0.0.1:8000/me/latest-entry-timestamp"; //"https://chubby-krystyna-cuicuidev-da9ab1a9.koyeb.app/me/latest-entry-timestamp";
+    var latest = http.getLatest(allocator, latest_endpoint, jwt, writer) catch |err| {
+        try writer.print("{}\n", .{err});
+        std.time.sleep(std.time.ns_per_s * 5);
+        @panic("AAAAAAAAAAAAAAAAAAAA");
+    };
 
     try writer.print("Latest timestamp: {}\n", .{latest});
 
@@ -101,7 +106,8 @@ pub fn iterateStatsDir(allocator: mem.Allocator, dir: fs.Dir, latest: i128, jwt:
             var data = try scenario.ScenarioData.fromCsvFile(allocator, csv_file);
             defer data.deinit();
 
-            try http.sendPayload(allocator, &data, "https://chubby-krystyna-cuicuidev-da9ab1a9.koyeb.app/insert", jwt, writer);
+            const insert_endpoint = "http://localhost:8000/me/insert-entry"; // "https://chubby-krystyna-cuicuidev-da9ab1a9.koyeb.app/insert";
+            try http.sendPayload(allocator, &data, insert_endpoint, jwt, writer);
             if (stat.ctime > highest) {
                 highest = stat.ctime;
             }
