@@ -2,11 +2,14 @@ from datetime import datetime, timedelta
 from typing import Annotated, Optional, Literal
 
 
+import pandas as pd
+import numpy as np
+
 from fastapi import Depends, status
 from fastapi.exceptions import HTTPException
 from fastapi.routing import APIRouter
 
-from sqlmodel import select, or_
+from sqlmodel import select, or_, func
 from sqlmodel.sql import _expression_select_cls as sql_types
 
 from pydantic import BaseModel
@@ -79,3 +82,35 @@ def parse_date_query(date_query: Optional[str], base_query: sql_types.SelectOfSc
     dates = [str(int(date.timestamp())*1_000_000_000) for date in dates_]
     return base_query.where(Entry.ctime >= dates[0]).where(Entry.ctime <= dates[1])
 
+class Percentiles(BaseModel):
+    season: int
+    difficulty: Literal["novice", "intermediate", "advanced"]
+    percentiles: list[tuple[Entry, float]]
+
+@entry_router.get("/percentiles/vt-s{season}-{difficulty}")
+async def get_percentiles(
+        season: int,
+        difficulty: Literal["novice", "intermediate", "advanced"],
+        session: SessionDep,
+    ):
+
+    s = VOLTAIC.get(season)
+    if s is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"Season {season} not found.")
+    
+    thresholds = s.get(difficulty)
+    if thresholds is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"Difficulty {difficulty} not found.")
+
+    base_query = select(Entry).where(or_(Entry.hash == hash for hash in thresholds.keys()))
+    data = session.exec(base_query).all()
+    df = pd.DataFrame([(entry.score, entry.scenario) for entry in data], columns=["score", "scenario"])
+    # print(data)
+    result = df.groupby("scenario").agg({"score" : [quantile(q) for q in np.arange(0.0, 1.0, 0.01)]})["score"].T.to_dict()
+    return result
+
+def quantile(q):
+    def _q(a):
+        return np.quantile(a, q)
+    _q.__name__ = f"quantile_{round(q,2)}"
+    return _q

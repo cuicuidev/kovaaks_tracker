@@ -15,6 +15,8 @@ API_URL = "http://127.0.0.1:8000"# "https://chubby-krystyna-cuicuidev-da9ab1a9.k
 
 BENCHMARK_CATEGORIES = ["Dynamic", "Static", "Linear", "Precise", "Reactive", "Control", "Speed", "Evasive", "Stability"]
 
+PLOTLY_COLOR_ACCENT=["rgb(1, 0, 1)", "rgb(1, 0.2, 1)", "rgb(1, 0.4, 1)"]
+
 def main():
 
     st.set_page_config(layout="wide", page_title="Aimalytics")
@@ -104,11 +106,11 @@ def show_season(anchor, season, difficulty):
     del df__
         
     df_energy_cummax = pd.concat(series, axis=1).dropna()
-    fig_energy_progress = px.line(x=df_energy_cummax.index, y=stats.hmean(df_energy_cummax,axis=1), height=400)
+    fig_energy_progress = px.line(x=df_energy_cummax.index, y=stats.hmean(df_energy_cummax,axis=1), height=400, color_discrete_sequence=PLOTLY_COLOR_ACCENT)
 
     # All time max score for radar graph
     max_ = df_energy_cummax.max(axis=0)
-    fig_radar = px.line_polar(theta=BENCHMARK_CATEGORIES, r=max_.values, line_close=True, range_r=[energy_thresholds[0] - 100, energy_thresholds[-1] + 100], )
+    fig_radar = px.line_polar(theta=BENCHMARK_CATEGORIES, r=max_.values, line_close=True, range_r=[energy_thresholds[0] - 100, energy_thresholds[-1] + 100], color_discrete_sequence=PLOTLY_COLOR_ACCENT)
     fig_radar.update_layout(polar=dict(bgcolor = "rgba(0.0, 0.0, 0.0, 0.0)"))
 
     # Synthetic data as a placeholder
@@ -117,7 +119,7 @@ def show_season(anchor, season, difficulty):
 
     # Histogram to compare with the population
     pdf = stats.gaussian_kde(random_data)
-    fig_histogram = px.line(pdf.pdf(np.linspace(-100,1300,1000))*100)
+    fig_histogram = px.line(pdf.pdf(np.linspace(-100,1300,1000))*100, color_discrete_sequence=PLOTLY_COLOR_ACCENT)
     energy = stats.hmean(df_energy_cummax.max(axis=0))
     trace = go.Scatter(
         x=[energy, energy],
