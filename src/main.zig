@@ -11,6 +11,8 @@ const io = std.io;
 const os = std.os;
 const win32 = os.windows.kernel32;
 
+const DEBUG = true;
+
 pub fn main() !void {
     // MEM ALLOCATOR
     var gpa = heap.GeneralPurposeAllocator(.{}){};
@@ -21,24 +23,20 @@ pub fn main() !void {
     const stdout = io.getStdOut();
     const writer = stdout.writer();
 
-    // PATHS
+    // HOME DIRECTORY
     const home_env_var_name = "USERPROFILE";
     const home_dir = try std.process.getEnvVarOwned(allocator, home_env_var_name);
     defer allocator.free(home_dir);
 
-    try writer.print("HOME: {s}\n", .{home_dir});
-
+    // CONFIG FILE DIRECTORY
     const config_name = ".kvkstracker\\config.csv";
     const config_path = try std.fmt.allocPrint(allocator, "{s}\\{s}", .{ home_dir, config_name });
     defer allocator.free(config_path);
 
-    try writer.print("Config location: {s}\n", .{config_path});
-
+    // ACCESS TOKEN DIRECTORY
     const token_name = ".kvkstracker\\access_token.txt";
     const token_path = try std.fmt.allocPrint(allocator, "{s}\\{s}", .{ home_dir, token_name });
     defer allocator.free(token_path);
-
-    try writer.print("Access token location: {s}\n", .{token_path});
 
     // CONFIG
     var config = try Config.readFrom(
@@ -47,7 +45,7 @@ pub fn main() !void {
     );
     defer config.deinit();
 
-    // STATS DIR
+    // OPEN STATS DIRECTORY
     var dir = std.fs.openDirAbsolute(
         config.stats_dir,
         .{ .iterate = true },
@@ -67,25 +65,25 @@ pub fn main() !void {
     };
     defer dir.close();
 
-    try writer.print("Opened stats dir: {s}\n", .{config.stats_dir});
+    if (DEBUG) try writer.print("Opened stats dir: {s}\n", .{config.stats_dir});
 
-    // JWT
+    // LOAD JWT
     const jwt = try readJWT(allocator, token_path);
     defer allocator.free(jwt);
 
-    try writer.print("Access token: {s}\n", .{jwt});
+    if (DEBUG) try writer.print("Access token: {s}\n", .{jwt});
 
-    // LATEST STAT
-    const latest_endpoint = "http://127.0.0.1:8000/me/latest-entry-timestamp"; //"https://chubby-krystyna-cuicuidev-da9ab1a9.koyeb.app/me/latest-entry-timestamp";
+    // GET LATEST STAT ENTRY IN DATABASE
+    const latest_endpoint = if (DEBUG) "http://127.0.0.1:8000/me/latest-entry-timestamp" else "https://chubby-krystyna-cuicuidev-da9ab1a9.koyeb.app/me/latest-entry-timestamp";
     var latest = http.getLatest(allocator, latest_endpoint, jwt, writer) catch |err| {
         try writer.print("{}\n", .{err});
         std.time.sleep(std.time.ns_per_s * 5);
         @panic("AAAAAAAAAAAAAAAAAAAA");
     };
 
-    try writer.print("Latest timestamp: {}\n", .{latest});
+    if (DEBUG) try writer.print("Latest timestamp: {}\n", .{latest});
 
-    // WATCHDOG
+    // MAIN LOOP
     while (true) {
         latest = try iterateStatsDir(allocator, dir, latest, jwt, writer);
         std.time.sleep(std.time.ns_per_s * config.time_interval_seconds);
@@ -106,7 +104,7 @@ pub fn iterateStatsDir(allocator: mem.Allocator, dir: fs.Dir, latest: i128, jwt:
             var data = try scenario.ScenarioData.fromCsvFile(allocator, csv_file);
             defer data.deinit();
 
-            const insert_endpoint = "http://localhost:8000/me/insert-entry"; // "https://chubby-krystyna-cuicuidev-da9ab1a9.koyeb.app/insert";
+            const insert_endpoint = if (DEBUG) "http://localhost:8000/me/insert-entry" else "https://chubby-krystyna-cuicuidev-da9ab1a9.koyeb.app/insert";
             try http.sendPayload(allocator, &data, insert_endpoint, jwt, writer);
             if (stat.ctime > highest) {
                 highest = stat.ctime;

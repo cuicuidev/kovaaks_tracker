@@ -11,3 +11,5 @@ zig-out/
 build/
 dist/
 *.spec
+
+sandbox.zig
