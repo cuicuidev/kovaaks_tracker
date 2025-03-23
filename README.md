@@ -1,4 +1,5 @@
-# KovaaK's tracking tool
+# Aimalytics
 
-- aaaaaaaaaaaaaaa
-- aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+- Client Tracking Tool
+- Backend API
+- Frontend Web App
