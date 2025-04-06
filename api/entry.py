@@ -9,7 +9,7 @@ from fastapi import Depends, status
 from fastapi.exceptions import HTTPException
 from fastapi.routing import APIRouter
 
-from sqlmodel import select, or_, func
+from sqlmodel import select, or_, func, text
 from sqlmodel.sql import _expression_select_cls as sql_types
 
 from pydantic import BaseModel
@@ -102,15 +102,24 @@ async def get_percentiles(
     if thresholds is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"Difficulty {difficulty} not found.")
 
-    base_query = select(Entry).where(or_(Entry.hash == hash for hash in thresholds.keys()))
-    data = session.exec(base_query).all()
-    df = pd.DataFrame([(entry.score, entry.scenario) for entry in data], columns=["score", "scenario"])
-    # print(data)
-    result = df.groupby("scenario").agg({"score" : [quantile(q) for q in np.arange(0.0, 1.0, 0.01)]})["score"].T.to_dict()
-    return result
+    query = f"""WITH percentiles AS (
+                SELECT generate_series(1, 100) AS percentile
+                )
+                SELECT
+                p.percentile,
+                percentile_cont(p.percentile / 100.0) WITHIN GROUP (ORDER BY e.score) AS score_percentile,
+                MAX(e.scenario) AS scenario,
+                MAX(e.hash) as hash
+                FROM
+                percentiles p
+                JOIN
+                entry e ON e.hash IN ({", ".join([f"'{hash_}'" for hash_ in thresholds.keys()])})
+                GROUP BY
+                p.percentile, e.hash
+                ORDER BY
+                p.percentile;"""
 
-def quantile(q):
-    def _q(a):
-        return np.quantile(a, q)
-    _q.__name__ = f"quantile_{round(q,2)}"
-    return _q
+    result = session.exec(text(query)).all()
+    result_df = pd.DataFrame(result, columns=["percentile", "score", "scenario" , "hash"])
+
+    return {hash_ : result_df[result_df["hash"] == hash_].drop("hash", axis=1).T.to_dict() for hash_ in result_df["hash"].unique()}
