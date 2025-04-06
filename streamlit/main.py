@@ -114,11 +114,19 @@ def show_season(anchor, season, difficulty):
     fig_radar.update_layout(polar=dict(bgcolor = "rgba(0.0, 0.0, 0.0, 0.0)"))
 
     # Synthetic data as a placeholder
-    random_data = np.expm1(np.random.normal(5.398594934535208, 1, 1000))
-    random_data = random_data[np.where(random_data < 1250)]
+    percentile_data = requests.get(API_URL + f"/entry/percentiles/vt-s{season}-{difficulty}", headers={"Authorization" : f"Bearer {st.session_state['access_token']}"})
+    percentiles_df = pd.DataFrame({k : [row["score"] for row in v] for k, v in percentile_data.json().items()}, index=range(1,101)).reset_index()
+    percentiles_df = percentiles_df.drop(["index"], axis=1)
+
+    percentiles = []
+
+    for row in percentiles_df.iloc:
+        energies = {hash_ : benchmark.get_energy(score, hash_) for hash_, score in row.to_dict().items()}
+        pairs = [max(energy_a, energy_b) for energy_a, energy_b in zip(list(energies.values())[::2], list(energies.values())[1::2])]
+        percentiles.append(stats.hmean(pairs))        
 
     # Histogram to compare with the population
-    pdf = stats.gaussian_kde(random_data)
+    pdf = stats.gaussian_kde(percentiles)
     fig_histogram = px.line(pdf.pdf(np.linspace(-100,1300,1000))*100, color_discrete_sequence=PLOTLY_COLOR_ACCENT)
     energy = stats.hmean(df_energy_cummax.max(axis=0))
     trace = go.Scatter(
