@@ -41,24 +41,24 @@ VOLTAIC = {
             "7cd5eee66632ebec0c33218d218ebf95" : (450, 490, 540, 580), # PENTA BOUNCE
         },
         "advanced" : {
-            "c31be0039b0f21b7294e0bb6d89c6df0" : (900, 1020, 1130, 1250), # PASU
-            "8de94615187dbe31818e105c569548fd" : (670, 790, 890, 980), # POPCORN
-            "82b54d0e4727d06036d27f83ee2de893" : (1310, 1410, 1510, 1620), # 1W2TS
-            "4feccb9eba723a1592d25fc385499d6f" : (1520, 1630, 1740, 1880), # WW5T
-            "a50a0c29ba4b86f47c4c446d8ed97156" : (1100, 1230, 1370, 1500), # FROGTAGON
-            "594a057e7607be59ff7f52230f3ec9f9" : (740, 850, 960, 1070), # FLOATING HEADS
-            "4a7eabf5fce5441d136802764e1db34a" : (2875, 3300, 3650, 3950), # PGT
-            "c6ce04a85ad4cea7cbce9964d496bb50" : (3025, 3325, 3600, 3850), # SNAKE TRACK
-            "a23f37408022e722bd1893793125388d" : (2800, 3150, 3475, 3725), # AETHER
-            "7e09e17f08ebd6f28ba838cac836e5ea" : (2875, 3175, 3475, 3725), # GROUND
-            "5416e5f54286c4be7eece8e8d8ac624c" : (3150, 3500, 3850, 4200), # RAW CONTROL
-            "52a076346df8d7fa588f4f1fb0501266" : (3125, 3475, 3825, 4200), # CONTROLSPHERE
-            "e42c0bdc3bf99978bdef01992c8cff05" : (1230, 1290, 1350, 1400), # DOT TS
-            "10838602736abdcd06f394c37db50642" : (1030, 1130, 1210, 1280), # EDDIE TS
-            "4d5626939cc35aa15284cba2bcefeb6d" : (440, 480, 510, 540), # DRIFT TS
-            "f69848a1c18ccb7376cc29c8b983ba7b" : (480, 520, 570, 600), # FLY TS
-            "adf1bc9f310106ba19894cb52f8a8478" : (450, 490, 530, 560), # CONTROL TS
-            "2ab3238b5a414e4e7aff67771608be1b" : (530, 580, 620, 670), # PENTA BOUNCE
+            "c31be0039b0f21b7294e0bb6d89c6df0" : (910, 1020, 1110, 1240), # PASU
+            "8de94615187dbe31818e105c569548fd" : (680, 800, 910, 1020), # POPCORN
+            "82b54d0e4727d06036d27f83ee2de893" : (1320, 1420, 1520, 1620), # 1W2TS
+            "4feccb9eba723a1592d25fc385499d6f" : (1510, 1610, 1720, 1860), # WW5T
+            "a50a0c29ba4b86f47c4c446d8ed97156" : (1090, 1220, 1360, 1490), # FROGTAGON
+            "594a057e7607be59ff7f52230f3ec9f9" : (740, 830, 920, 1050), # FLOATING HEADS
+            "4a7eabf5fce5441d136802764e1db34a" : (2750, 3175, 3625, 4050), # PGT
+            "c6ce04a85ad4cea7cbce9964d496bb50" : (3050, 3425, 3725, 4050), # SNAKE TRACK
+            "a23f37408022e722bd1893793125388d" : (2750, 3175, 3525, 3825), # AETHER
+            "7e09e17f08ebd6f28ba838cac836e5ea" : (2875, 3200, 3500, 3725), # GROUND
+            "5416e5f54286c4be7eece8e8d8ac624c" : (3150, 3550, 3875, 4250), # RAW CONTROL
+            "52a076346df8d7fa588f4f1fb0501266" : (3100, 3550, 3875, 4250), # CONTROLSPHERE
+            "e42c0bdc3bf99978bdef01992c8cff05" : (1280, 1360, 1420, 1500), # DOT TS
+            "10838602736abdcd06f394c37db50642" : (1020, 1120, 1200, 1280), # EDDIE TS
+            "4d5626939cc35aa15284cba2bcefeb6d" : (430, 470, 510, 540), # DRIFT TS
+            "f69848a1c18ccb7376cc29c8b983ba7b" : (540, 600, 660, 720), # FLY TS
+            "adf1bc9f310106ba19894cb52f8a8478" : (450, 490, 520, 550), # CONTROL TS
+            "2ab3238b5a414e4e7aff67771608be1b" : (530, 580, 630, 670), # PENTA BOUNCE
         }
     }
 }
