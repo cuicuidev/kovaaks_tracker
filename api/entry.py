@@ -82,10 +82,6 @@ def parse_date_query(date_query: Optional[str], base_query: sql_types.SelectOfSc
     dates = [str(int(date.timestamp())*1_000_000_000) for date in dates_]
     return base_query.where(Entry.ctime >= dates[0]).where(Entry.ctime <= dates[1])
 
-class Percentiles(BaseModel):
-    season: int
-    difficulty: Literal["novice", "intermediate", "advanced"]
-    percentiles: list[tuple[Entry, float]]
 
 @entry_router.get("/percentiles/vt-s{season}-{difficulty}")
 async def get_percentiles(
@@ -105,21 +101,24 @@ async def get_percentiles(
     query = f"""WITH percentiles AS (
                 SELECT generate_series(1, 100) AS percentile
                 )
+
                 SELECT
                 p.percentile,
                 percentile_cont(p.percentile / 100.0) WITHIN GROUP (ORDER BY e.score) AS score_percentile,
-                MAX(e.scenario) AS scenario,
                 MAX(e.hash) as hash
+
                 FROM
                 percentiles p
                 JOIN
                 entry e ON e.hash IN ({", ".join([f"'{hash_}'" for hash_ in thresholds.keys()])})
+
                 GROUP BY
                 p.percentile, e.hash
+                
                 ORDER BY
                 p.percentile;"""
 
     result = session.exec(text(query)).all()
-    result_df = pd.DataFrame(result, columns=["percentile", "score", "scenario" , "hash"])
+    result_df = pd.DataFrame(result, columns=["percentile", "score", "hash"])
 
-    return {hash_ : result_df[result_df["hash"] == hash_].drop("hash", axis=1).T.to_dict() for hash_ in result_df["hash"].unique()}
+    return {hash_ : list(result_df[result_df["hash"] == hash_].drop("hash", axis=1).reset_index(drop=True).T.to_dict().values()) for hash_ in result_df["hash"].unique()}
