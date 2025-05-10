@@ -15,7 +15,7 @@ API_URL = "http://127.0.0.1:8000"# "https://chubby-krystyna-cuicuidev-da9ab1a9.k
 
 BENCHMARK_CATEGORIES = ["Dynamic", "Static", "Linear", "Precise", "Reactive", "Control", "Speed", "Evasive", "Stability"]
 
-PLOTLY_COLOR_ACCENT=["rgb(1, 0, 1)", "rgb(1, 0.2, 1)", "rgb(1, 0.4, 1)"]
+PLOTLY_COLOR_ACCENT=["rgb(255, 0, 255)", "rgb(255, 55, 255)", "rgb(255, 101, 255)"]
 
 def main():
 
@@ -127,11 +127,13 @@ def show_season(anchor, season, difficulty):
 
     # Histogram to compare with the population
     pdf = stats.gaussian_kde(percentiles)
-    fig_histogram = px.line(pdf.pdf(np.linspace(-100,1300,1000))*100, color_discrete_sequence=PLOTLY_COLOR_ACCENT)
+    # fig_histogram = px.line(pdf.pdf(np.linspace(-100, energy_thresholds[-1] + 100, 1000))*100, color_discrete_sequence=PLOTLY_COLOR_ACCENT)
+    fig_histogram = px.line(percentiles, color_discrete_sequence=PLOTLY_COLOR_ACCENT)
+
     energy = stats.hmean(df_energy_cummax.max(axis=0))
     trace = go.Scatter(
         x=[energy, energy],
-        y=[0,.25],
+        y=[0,.75],
         mode="lines"
     )
     fig_histogram.add_trace(trace)
